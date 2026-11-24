@@ -1,0 +1,100 @@
+<% const err = (f) => (error && error.field === f) ? error.pesan : null; %>
+<h1 class="page-h1">Catat Pengeluaran</h1>
+
+<% if (peran === 'pemilik') { %>
+<%- include('../../partials/tabs', { tabs: [
+  { label: 'Laporan Kas Lengkap', href: k.laporan },
+  { label: 'Catat Pengeluaran', href: k.pengeluaran, aktif: true }
+] }) %>
+<% } %>
+
+<% if (info === 'tersimpan') { %><p class="notice alert-lebar">Pengeluaran berhasil disimpan.</p><% } %>
+
+<div class="two-col">
+  <section class="glass-card">
+    <div class="row">
+      <h2>Catat Pengeluaran Baru</h2>
+      <span class="text-secondary small">* wajib diisi</span>
+    </div>
+
+    <form id="form-pengeluaran" method="post" action="<%= k.pengeluaran %>" class="auth-form" novalidate>
+  <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+      <div class="field">
+        <label for="tanggal">Tanggal *</label>
+        <input class="input <%= err('tanggal') ? 'is-error' : '' %>" id="tanggal" type="date" name="tanggal" value="<%= form.tanggal || hariIni %>" max="<%= hariIni %>" required>
+        <% if (err('tanggal')) { %><p class="error" role="alert"><%= err('tanggal') %></p><% } %>
+      </div>
+
+      <div class="field">
+        <span class="label-teks" id="lbl-kategori">Kategori *</span>
+        <div class="pilihan" role="radiogroup" aria-labelledby="lbl-kategori">
+          <% opsi.forEach(function (o) { %>
+          <input class="visually-hidden" type="radio" name="kategori" id="kat-<%= o.nilai %>" value="<%= o.nilai %>" data-kas="<%= o.kasLabel %>" data-label="<%= o.label %>" <%= form.kategori === o.nilai ? 'checked' : '' %> required>
+          <label class="chip" for="kat-<%= o.nilai %>"><%= o.label %></label>
+          <% }) %>
+        </div>
+        <% if (err('kategori')) { %><p class="error" role="alert"><%= err('kategori') %></p><% } %>
+      </div>
+
+      <div class="field">
+        <label for="nominal">Nominal *</label>
+        <div class="input-prefix">
+          <span class="awalan" aria-hidden="true">Rp</span>
+          <input class="input <%= err('nominal') ? 'is-error' : '' %>" id="nominal" type="text" name="nominal" inputmode="numeric" placeholder="150.000" value="<%= form.nominal || '' %>" autocomplete="off" required>
+        </div>
+        <% if (err('nominal')) { %><p class="error" role="alert"><%= err('nominal') %></p><% } %>
+      </div>
+
+      <div class="field">
+        <label for="catatan">Catatan (opsional)</label>
+        <textarea class="input area" id="catatan" name="catatan" maxlength="200"><%= form.catatan || '' %></textarea>
+        <% if (err('catatan')) { %><p class="error" role="alert"><%= err('catatan') %></p><% } %>
+      </div>
+
+      <p class="hint info-kas">
+        <%- include('../../partials/icon', { nama: 'alert' }) %>
+        Akan dicatat ke: <strong data-kas-teks>pilih kategori dulu</strong>
+      </p>
+
+      <div class="aksi-baris">
+        <a class="btn-secondary" href="<%= peran === 'pemilik' ? k.laporan : k.pengeluaran %>">Batal</a>
+        <button class="btn-primary" type="button" data-konfirmasi>Simpan</button>
+        <noscript><button class="btn-primary" type="submit">Simpan</button></noscript>
+      </div>
+    </form>
+  </section>
+
+  <section class="glass-card">
+    <h2>Pengeluaran Terakhir</h2>
+    <% if (!terakhir.length) { %>
+    <p class="text-secondary">Belum ada pengeluaran.</p>
+    <% } else { %>
+    <div class="tabel-scroll">
+      <table class="tabel">
+        <thead><tr><th>Tanggal</th><th>Kategori</th><th>Nominal</th><th>Dicatat oleh</th></tr></thead>
+        <tbody>
+          <% terakhir.forEach(function (t) { %>
+          <tr>
+            <td><%= fmt.tanggalDM(t.tanggal) %></td>
+            <td><%= t.kategori %></td>
+            <td><%= fmt.rupiah(t.nominal) %></td>
+            <td><%= t.oleh %></td>
+          </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    </div>
+    <% } %>
+  </section>
+</div>
+
+<dialog class="modal" id="dlg-simpan" aria-labelledby="jdl-simpan">
+  <div class="row"><h2 id="jdl-simpan">Simpan pengeluaran ini?</h2><button type="button" class="btn-ikon" data-tutup aria-label="Tutup">&times;</button></div>
+  <p><strong id="ringkas-simpan"></strong></p>
+  <div class="notice-box"><%- include('../../partials/icon', { nama: 'alert' }) %><div><p>Akan dicatat ke: <strong id="kas-simpan"></strong></p></div></div>
+  <div class="notice-box"><%- include('../../partials/icon', { nama: 'alert' }) %><div><p class="text-secondary">Pengeluaran tidak dapat diubah setelah disimpan.</p></div></div>
+  <div class="aksi-baris">
+    <button type="button" class="btn-secondary" data-tutup>Batal</button>
+    <button type="submit" form="form-pengeluaran" class="btn-primary">Ya, Simpan</button>
+  </div>
+</dialog>

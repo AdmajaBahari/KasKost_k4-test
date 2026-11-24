@@ -1,0 +1,98 @@
+<h1 class="page-h1">Kos</h1>
+<%- include('../../partials/tabs', { tabs: [
+  { label: 'Persetujuan Pendaftar', href: '/pemilik/kos/pendaftar' },
+  { label: 'Kelola Penghuni', href: '/pemilik/kos/penghuni' },
+  { label: 'Kelola Kamar', href: '/pemilik/kos/kamar', aktif: true }
+] }) %>
+
+<div class="stat-grid">
+  <div class="glass-card stat"><p class="text-secondary small">Jumlah Kamar</p><p class="stat-nilai"><%= d.ringkas.jumlah %></p></div>
+  <div class="glass-card stat"><p class="text-secondary small">Terisi</p><p class="stat-nilai"><%= d.ringkas.terisi %></p></div>
+  <div class="glass-card stat"><p class="text-secondary small">Kosong</p><p class="stat-nilai"><%= d.ringkas.kosong %></p></div>
+  <div class="glass-card stat"><p class="text-secondary small">Nonaktif</p><p class="stat-nilai"><%= d.ringkas.nonaktif %></p></div>
+</div>
+
+<% if (info === 'ditambah') { %><p class="notice alert-lebar">Kamar berhasil ditambahkan.</p><% } %>
+<% if (info === 'diubah') { %><p class="notice alert-lebar">Nama kamar diperbarui.</p><% } %>
+<% if (info === 'dinonaktifkan') { %><p class="notice alert-lebar">Kamar dinonaktifkan.</p><% } %>
+<% if (info === 'diaktifkan') { %><p class="notice alert-lebar">Kamar diaktifkan kembali.</p><% } %>
+<% if (info === 'duplikat') { %><div class="alert alert-lebar" role="alert"><%- include('../../partials/icon', { nama: 'alert' }) %><strong>Nama kamar sudah dipakai.</strong></div><% } %>
+<% if (info === 'nama') { %><div class="alert alert-lebar" role="alert"><%- include('../../partials/icon', { nama: 'alert' }) %><strong>Nama kamar 1 sampai 30 karakter (huruf, angka, spasi, titik, atau strip).</strong></div><% } %>
+<% if (info === 'gagal') { %><div class="alert alert-lebar" role="alert"><%- include('../../partials/icon', { nama: 'alert' }) %><strong>Gagal memproses. Hanya kamar kosong yang dapat dinonaktifkan.</strong></div><% } %>
+
+<section class="glass-container">
+  <div class="row bar-tabel">
+    <h2>Daftar Kamar</h2>
+    <button class="btn-secondary btn-kecil" type="button" data-dialog="dlg-tambah">+ Tambah Kamar</button>
+  </div>
+  <div class="tabel-scroll">
+    <table class="tabel tabel-lebar">
+      <thead><tr><th>Kamar</th><th>Penghuni</th><th>Status Kamar</th><th>Aksi</th></tr></thead>
+      <tbody>
+        <% d.daftar.forEach(function (k) { %>
+        <tr>
+          <td><strong><%= k.nama %></strong></td>
+          <td><%= k.penghuni || '-' %></td>
+          <td><span class="pill"><%= { terisi: 'Terisi', kosong: 'Kosong', nonaktif: 'Nonaktif' }[k.status] %></span></td>
+          <td>
+            <div class="aksi-baris">
+              <button class="btn-secondary btn-kecil" type="button" data-dialog="dlg-ubah" data-aksi="/pemilik/kos/kamar/<%= k.id %>/ubah" data-nilai="<%= k.nama %>">Ubah</button>
+              <% if (k.status === 'kosong') { %>
+              <button class="btn-secondary btn-kecil" type="button" data-dialog="dlg-nonaktif" data-aksi="/pemilik/kos/kamar/<%= k.id %>/nonaktifkan" data-ringkas="<%= k.nama %>">Nonaktifkan</button>
+              <% } else if (k.status === 'terisi') { %>
+              <span class="text-secondary small">Kosongkan kamar dulu</span>
+              <% } else { %>
+              <form method="post" action="/pemilik/kos/kamar/<%= k.id %>/aktifkan">
+  <input type="hidden" name="_csrf" value="<%= csrfToken %>"><button class="btn-secondary btn-kecil" type="submit">Aktifkan</button></form>
+              <% } %>
+            </div>
+          </td>
+        </tr>
+        <% }) %>
+      </tbody>
+    </table>
+  </div>
+  <p class="text-secondary small">Menampilkan <%= d.daftar.length %> dari <%= d.ringkas.jumlah %> kamar</p>
+</section>
+
+<dialog class="modal" id="dlg-tambah" aria-labelledby="jdl-tambah">
+  <div class="row"><h2 id="jdl-tambah">Tambah Kamar</h2><button type="button" class="btn-ikon" data-tutup aria-label="Tutup">&times;</button></div>
+  <form method="post" action="/pemilik/kos/kamar/tambah" class="auth-form">
+  <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+    <div class="field">
+      <label for="nama-baru">Nama atau nomor kamar *</label>
+      <input class="input" id="nama-baru" type="text" name="nama" maxlength="30" placeholder="Kamar 11" required>
+    </div>
+    <div class="notice-box"><%- include('../../partials/icon', { nama: 'alert' }) %><div><p class="text-secondary">Kamar baru berstatus Kosong dan muncul di pilihan registrasi.</p></div></div>
+    <div class="aksi-baris">
+      <button type="button" class="btn-secondary" data-tutup>Batal</button>
+      <button type="submit" class="btn-primary">Tambah</button>
+    </div>
+  </form>
+</dialog>
+
+<dialog class="modal" id="dlg-ubah" aria-labelledby="jdl-ubah">
+  <div class="row"><h2 id="jdl-ubah">Ubah Kamar</h2><button type="button" class="btn-ikon" data-tutup aria-label="Tutup">&times;</button></div>
+  <form method="post" action="#" class="auth-form">
+  <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+    <div class="field">
+      <label for="nama-ubah">Nama atau nomor kamar *</label>
+      <input class="input" id="nama-ubah" type="text" name="nama" maxlength="30" data-isi required>
+    </div>
+    <div class="aksi-baris">
+      <button type="button" class="btn-secondary" data-tutup>Batal</button>
+      <button type="submit" class="btn-primary">Simpan</button>
+    </div>
+  </form>
+</dialog>
+
+<dialog class="modal" id="dlg-nonaktif" aria-labelledby="jdl-nonaktif">
+  <div class="row"><h2 id="jdl-nonaktif">Nonaktifkan kamar ini?</h2><button type="button" class="btn-ikon" data-tutup aria-label="Tutup">&times;</button></div>
+  <p><strong data-ringkas></strong></p>
+  <div class="notice-box"><%- include('../../partials/icon', { nama: 'alert' }) %><div><p class="text-secondary">Kamar tidak muncul di pilihan registrasi dan tidak menerima penghuni baru. Dapat diaktifkan kembali.</p></div></div>
+  <form method="post" action="#" class="aksi-baris">
+  <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+    <button type="button" class="btn-secondary" data-tutup>Batal</button>
+    <button type="submit" class="btn-primary">Ya, Nonaktifkan</button>
+  </form>
+</dialog>

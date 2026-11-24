@@ -1,0 +1,76 @@
+<h1 class="page-h1">Riwayat Tagihan</h1>
+
+<% if (!d.adaData) { %>
+<section class="glass-container">
+  <h2>Belum ada riwayat</h2>
+  <p class="text-secondary">Tagihanmu akan muncul di sini setelah tagihan pertama dibuat.</p>
+</section>
+<% } else { %>
+<div class="toolbar">
+  <form method="get" action="/riwayat" class="bulan-form">
+    <select class="input input-bulan" name="tahun" data-auto aria-label="Pilih tahun">
+      <% d.daftarTahun.forEach(function (t) { %>
+      <option value="<%= t %>" <%= t === d.tahun ? 'selected' : '' %>>Tahun <%= t %></option>
+      <% }) %>
+    </select>
+    <noscript><button class="btn-secondary btn-kecil" type="submit">Terapkan</button></noscript>
+  </form>
+</div>
+
+<div class="tagihan-grid">
+  <section class="glass-container">
+    <div class="tabel-scroll">
+      <table class="tabel tabel-lebar">
+        <thead>
+          <tr><th>Periode</th><th>Kelompok A</th><th>Kelompok B</th><th>Denda</th><th>Total</th><th>Status</th><th>Aksi</th></tr>
+        </thead>
+        <tbody>
+          <% d.baris.forEach(function (r) { %>
+          <tr class="<%= d.terpilih && d.terpilih.periode === r.periode ? 'dipilih' : '' %>">
+            <td><strong><%= r.bulan %></strong></td>
+            <td><%= r.A ? fmt.rupiah(r.A.total) : '-' %></td>
+            <td><%= r.B ? fmt.rupiah(r.B.total) : '-' %></td>
+            <td><%= r.DENDA ? fmt.rupiah(r.DENDA.total) : '-' %></td>
+            <td><strong><%= fmt.rupiah(r.total) %></strong></td>
+            <td><%- include('../../partials/badge', { status: r.status }) %></td>
+            <td><a class="btn-secondary btn-kecil" href="/riwayat?tahun=<%= d.tahun %>&periode=<%= r.periode %>">Lihat Detail</a></td>
+          </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    </div>
+    <p class="text-secondary small">Hanya menampilkan tagihan Anda.</p>
+  </section>
+
+  <% if (d.terpilih) { %>
+  <aside class="glass-container panel-detail">
+    <h2 class="h-kecil">Detail <%= d.terpilih.bulan %></h2>
+    <% ['A', 'B'].forEach(function (j) { var t = d.terpilih[j]; if (!t) return; %>
+    <div class="kartu-kecil">
+      <strong>Kelompok <%= j %>: <%= fmt.rupiah(t.total) %></strong>
+      <div><%- include('../../partials/badge', { status: t.status }) %></div>
+      <% if (t.bukti) { %>
+      <span class="text-secondary small">Dibayar <%= fmt.tanggalPendek(t.bukti.tanggal) %></span>
+      <a class="btn-secondary btn-kecil" href="/riwayat/bukti/<%= t.bukti.id %>" target="_blank" rel="noopener">Lihat Bukti</a>
+      <% } else if (t.status !== 'lunas') { %>
+      <a class="btn-secondary btn-kecil" href="/tagihan/<%= t.id %>">Buka Tagihan</a>
+      <% } %>
+    </div>
+    <% }) %>
+    <div class="kartu-kecil">
+      <strong>Denda: <%= d.terpilih.DENDA ? fmt.rupiah(d.terpilih.DENDA.total) : '-' %></strong>
+      <% if (d.terpilih.DENDA) { %>
+      <div><%- include('../../partials/badge', { status: d.terpilih.DENDA.status }) %></div>
+      <% if (d.terpilih.DENDA.bukti) { %>
+      <span class="text-secondary small">Dibayar <%= fmt.tanggalPendek(d.terpilih.DENDA.bukti.tanggal) %></span>
+      <a class="btn-secondary btn-kecil" href="/riwayat/bukti/<%= d.terpilih.DENDA.bukti.id %>" target="_blank" rel="noopener">Lihat Bukti</a>
+      <% } else if (d.terpilih.DENDA.status !== 'lunas') { %>
+      <a class="btn-secondary btn-kecil" href="/tagihan/<%= d.terpilih.DENDA.id %>">Buka Tagihan</a>
+      <% } %>
+      <% } %>
+    </div>
+    <p class="text-secondary small">Bukti hanya dapat dilihat oleh Anda dan pengelola yang berwenang.</p>
+  </aside>
+  <% } %>
+</div>
+<% } %>

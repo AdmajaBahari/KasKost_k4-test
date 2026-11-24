@@ -1,0 +1,31 @@
+<% const err = (f) => (error && error.field === f) ? error.pesan : null; %>
+<section class="auth-card glass-card">
+  <%- include('../../partials/stepper', { langkah: 1 }) %>
+  <h1>Daftar sebagai Penghuni</h1>
+  <p class="text-secondary">Akun aktif setelah disetujui Pemilik.</p>
+  <form method="post" action="/daftar" class="auth-form" novalidate>
+  <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+    <div class="field">
+      <label for="kamar_id">Kamar</label>
+      <select class="input <%= err('kamar_id') ? 'is-error' : '' %>" id="kamar_id" name="kamar_id" required>
+        <option value="">Pilih kamar</option>
+        <% kamar.forEach(function (k) { %>
+        <option value="<%= k.id %>" <%= form.kamar_id === k.id ? 'selected' : '' %>><%= k.nama %></option>
+        <% }) %>
+      </select>
+      <% if (!kamar.length) { %><p class="hint">Belum ada kamar kosong. Hubungi Pemilik kos.</p><% } %>
+      <% if (err('kamar_id')) { %><p class="error" role="alert"><%= err('kamar_id') %></p><% } %>
+    </div>
+    <div class="field">
+      <label for="email">Email</label>
+      <input class="input <%= err('email') ? 'is-error' : '' %>" id="email" type="email" name="email" value="<%= form.email || '' %>" placeholder="nama@email.com" autocomplete="email" required>
+      <% if (err('email')) { %><p class="error" role="alert"><%= err('email') %></p><% } %>
+    </div>
+    <%- include('../../partials/password-field', { id: 'password', name: 'password', label: 'Password', autocomplete: 'new-password', hint: 'Minimal 8 karakter, kombinasi huruf dan angka.', pesanError: err('password') }) %>
+    <%- include('../../partials/password-field', { id: 'konfirmasi', name: 'konfirmasi', label: 'Konfirmasi password', autocomplete: 'new-password', hint: null, pesanError: err('konfirmasi') }) %>
+    <p class="hint">Email hanya dipakai untuk login dan notifikasi. Biodata dilengkapi nanti di menu Pengaturan.</p>
+    <button class="btn-primary btn-block" type="submit">Daftar dan Kirim Kode</button>
+  </form>
+  <hr class="divider">
+  <p class="text-secondary small">Sudah punya akun? <a class="link" href="/masuk">Masuk</a></p>
+</section>

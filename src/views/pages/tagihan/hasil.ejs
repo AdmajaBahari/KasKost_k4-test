@@ -1,0 +1,58 @@
+<section class="hero-status glass-card nada-<%= tampil.nada %>">
+  <span class="hero-ikon"><%- include('../../partials/icon', { nama: tampil.ikon }) %></span>
+  <div>
+    <h1><%= tampil.judul %></h1>
+    <%- include('../../partials/badge', { status: tampil.badge }) %>
+  </div>
+</section>
+
+<div class="two-col">
+  <section class="glass-card">
+    <h2>Hasil Pembacaan Bukti</h2>
+    <hr class="divider">
+    <% if (bacaNominal) { %>
+    <dl class="kv-list kv-lega">
+      <div class="kv"><dt>Nominal terbaca</dt><dd><%= b.nominal_terbaca ? fmt.rupiah(b.nominal_terbaca) : '-' %></dd></div>
+      <div class="kv">
+        <dt>Nominal tagihan</dt>
+        <dd class="kv-aksi">
+          <span><%= fmt.rupiah(t.total) %></span>
+          <% if (b.nominal_terbaca === t.total) { %><span class="pill pill-ok">Sama</span><% } else { %><span class="pill pill-bad">Tidak sama</span><% } %>
+        </dd>
+      </div>
+      <div class="kv"><dt>Tanggal pada bukti</dt><dd><%= fmt.tanggalPanjang(b.tanggal_pada_bukti) %></dd></div>
+      <div class="kv"><dt>Pengirim</dt><dd><%= b.nama_pengirim || '-' %></dd></div>
+      <div class="kv"><dt>Tingkat keyakinan</dt><dd><%= Number(b.keyakinan) || 0 %>%</dd></div>
+    </dl>
+    <div class="meter" aria-hidden="true"><span style="width: <%= Math.min(Math.max(Number(b.keyakinan) || 0, 0), 100) %>%"></span></div>
+    <hr class="divider">
+    <p class="text-secondary small"><%= b.status === 'disetujui' ? 'Nominal sesuai tagihan. Pembayaran dinyatakan lunas.' : (b.alasan_penolakan || '') %></p>
+    <% } else if (b.status === 'diperiksa_pengelola') { %>
+    <p>Batas <%= p.maks %> percobaan tercapai. Bukti Anda masuk antrean verifikasi manual. Mohon hubungi pengelola.</p>
+    <% } else { %>
+    <p><%= b.alasan_penolakan %></p>
+    <% if (petunjuk) { %><p class="text-secondary small"><%= petunjuk %></p><% } %>
+    <% } %>
+  </section>
+
+  <div class="col">
+    <section class="glass-card">
+      <h2><%= judul %>: <%= ringkas %></h2>
+      <p class="big"><%= fmt.rupiah(t.total) %></p>
+      <p class="text-secondary small">Dibayar ke: <%= rek ? rek.atas_nama : '-' %></p>
+      <% if (b.status === 'diperiksa_pengelola') { %>
+      <hr class="divider">
+      <p class="text-secondary small">Anda akan menerima notifikasi setelah diperiksa.</p>
+      <% } %>
+    </section>
+
+    <% if (['nominal_beda', 'ditolak', 'buram', 'duplikat'].includes(b.status)) { %>
+    <section class="glass-card">
+      <p>Sisa percobaan: <%= p.sisa %> dari <%= p.maks %></p>
+      <p class="text-secondary small">Bukti yang ditolak mengurangi sisa percobaan.</p>
+    </section>
+    <% if (boleh) { %><a class="btn-primary" href="/tagihan/<%= t.id %>/unggah">Unggah Ulang</a><% } %>
+    <% } %>
+    <a class="btn-secondary" href="/beranda">Kembali ke Beranda</a>
+  </div>
+</div>

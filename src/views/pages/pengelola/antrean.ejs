@@ -1,0 +1,110 @@
+<h1 class="page-h1">Antrean Verifikasi</h1>
+
+<% if (peran === 'pemilik') { %>
+<%- include('../../partials/tabs', { tabs: [
+  { label: 'Semua Tagihan', href: '/pemilik/tagihan/semua' },
+  { label: 'Antrean Verifikasi', href: basis, aktif: true },
+  { label: 'Beri Denda Manual', href: '/pemilik/tagihan/denda' }
+] }) %>
+<% } %>
+
+<% if (info === 'disetujui') { %><p class="notice alert-lebar">Bukti disetujui. Tagihan dinyatakan lunas dan penghuni sudah diberi tahu.</p><% } %>
+<% if (info === 'ditolak') { %><p class="notice alert-lebar">Bukti ditolak. Penghuni sudah diberi tahu.</p><% } %>
+<% if (info === 'gagal') { %>
+<div class="alert alert-lebar" role="alert"><%- include('../../partials/icon', { nama: 'alert' }) %><strong>Gagal memproses. Bukti mungkin sudah diputuskan.</strong></div>
+<% } %>
+
+<% if (peran === 'pemilik') { %>
+<div class="chips">
+  <a class="chip <%= !jenis ? 'aktif' : '' %>" href="<%= basis %>">Semua (<%= hitung.semua %>)</a>
+  <a class="chip <%= jenis === 'A' ? 'aktif' : '' %>" href="<%= basis %>?jenis=A">Kelompok A (<%= hitung.A %>)</a>
+  <a class="chip <%= jenis === 'B' ? 'aktif' : '' %>" href="<%= basis %>?jenis=B">Kelompok B (<%= hitung.B %>)</a>
+  <a class="chip <%= jenis === 'DENDA' ? 'aktif' : '' %>" href="<%= basis %>?jenis=DENDA">Denda (<%= hitung.DENDA %>)</a>
+</div>
+<% } %>
+
+<% if (!terpilih) { %>
+<section class="glass-container">
+  <h2>Antrean kosong</h2>
+  <p class="text-secondary">Tidak ada bukti yang perlu diperiksa.</p>
+</section>
+<% } else { %>
+<% const nama = terpilih.penghuni.user.nama_lengkap || terpilih.penghuni.user.email; %>
+<% const kamarNama = terpilih.penghuni.kamar ? terpilih.penghuni.kamar.nama : '-'; %>
+<% const ringkas = kamarNama + ' · ' + labelJenis(terpilih.tagihan.jenis) + ' · ' + fmt.rupiah(terpilih.tagihan.total); %>
+<div class="antrean-grid">
+  <div class="glass-container antrean-list">
+    <% daftar.forEach(function (b) { %>
+    <a class="antrean-item <%= b.id === terpilih.id ? 'aktif' : '' %>" href="<%= basis %>?<%= jenis ? 'jenis=' + jenis + '&' : '' %>id=<%= b.id %>">
+      <div class="row">
+        <strong><%= b.penghuni.kamar ? b.penghuni.kamar.nama : '-' %> · <%= labelJenis(b.tagihan.jenis) %></strong>
+        <%- include('../../partials/badge', { status: 'menunggu_verifikasi' }) %>
+      </div>
+      <span class="text-secondary small">Masuk antrean: batas percobaan tercapai</span>
+      <span class="text-secondary small"><%= fmt.tanggalPanjang(fmt.tanggalWIB(b.created_at)) %></span>
+    </a>
+    <% }) %>
+  </div>
+
+  <section class="glass-container antrean-detail">
+    <div class="row">
+      <h2><%= kamarNama %> · <%= nama %></h2>
+      <strong><%= labelJenis(terpilih.tagihan.jenis) %>: <%= fmt.rupiah(terpilih.tagihan.total) %></strong>
+    </div>
+    <hr class="divider">
+    <div class="detail-dua">
+      <div class="foto-bukti">
+        <% if (foto) { %><img src="<%= foto %>" alt="Foto bukti transfer"><% } else { %><span class="text-secondary">Foto tidak tersedia</span><% } %>
+      </div>
+      <div class="hasil-box">
+        <h2 class="h-kecil">Hasil Bacaan</h2>
+        <div class="dua-kotak">
+          <div class="kotak"><span class="text-secondary small">Nominal terbaca</span><strong><%= terpilih.nominal_terbaca ? fmt.rupiah(terpilih.nominal_terbaca) : '-' %></strong></div>
+          <div class="kotak"><span class="text-secondary small">Nominal tagihan</span><strong><%= fmt.rupiah(terpilih.tagihan.total) %></strong></div>
+        </div>
+        <div class="kv"><dt>Tanggal pada bukti</dt><dd><%= fmt.tanggalPendek(terpilih.tanggal_pada_bukti) %></dd></div>
+        <div class="kv"><dt>Pengirim</dt><dd><%= terpilih.nama_pengirim || '-' %></dd></div>
+        <div class="kv"><dt>Keyakinan</dt><dd><%= terpilih.keyakinan != null ? Number(terpilih.keyakinan) + '%' : '-' %></dd></div>
+      </div>
+    </div>
+    <div class="detail-dua">
+      <div>
+        <h2 class="h-kecil">Riwayat Penolakan</h2>
+        <ol class="steps">
+          <% riwayat.forEach(function (r) { %><li><%= r %></li><% }) %>
+        </ol>
+      </div>
+      <p class="text-secondary small">Penghuni akan menerima notifikasi hasil.<br>Bukti hanya terlihat oleh pengelola berwenang.</p>
+    </div>
+    <div class="aksi-baris">
+      <button class="btn-primary" type="button" data-dialog="dlg-setuju">Setujui</button>
+      <button class="btn-secondary" type="button" data-dialog="dlg-tolak">Tolak</button>
+    </div>
+  </section>
+</div>
+
+<dialog class="modal" id="dlg-setuju" aria-labelledby="jdl-setuju">
+  <div class="row"><h2 id="jdl-setuju">Setujui bukti ini?</h2><button type="button" class="btn-ikon" data-tutup aria-label="Tutup">&times;</button></div>
+  <p><strong><%= ringkas %></strong></p>
+  <div class="notice-box"><%- include('../../partials/icon', { nama: 'alert' }) %><div><strong>Keputusan bersifat final.</strong><p class="text-secondary">Tagihan menjadi lunas dan penghuni akan menerima notifikasi hasil.</p></div></div>
+  <form method="post" action="<%= basis %>/<%= terpilih.id %>/setujui" class="aksi-baris">
+  <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+    <button type="button" class="btn-secondary" data-tutup>Batal</button>
+    <button type="submit" class="btn-primary">Ya, Setujui</button>
+  </form>
+</dialog>
+
+<dialog class="modal" id="dlg-tolak" aria-labelledby="jdl-tolak">
+  <div class="row"><h2 id="jdl-tolak">Tolak bukti ini?</h2><button type="button" class="btn-ikon" data-tutup aria-label="Tutup">&times;</button></div>
+  <p><strong><%= ringkas %></strong></p>
+  <div class="notice-box"><%- include('../../partials/icon', { nama: 'alert' }) %><div><strong>Keputusan bersifat final.</strong><p class="text-secondary">Penghuni akan menerima notifikasi hasil.</p></div></div>
+  <form method="post" action="<%= basis %>/<%= terpilih.id %>/tolak" class="auth-form">
+  <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+    <input class="input" type="text" name="alasan" maxlength="200" placeholder="Alasan penolakan (opsional)" aria-label="Alasan penolakan (opsional)">
+    <div class="aksi-baris">
+      <button type="button" class="btn-secondary" data-tutup>Batal</button>
+      <button type="submit" class="btn-primary">Ya, Tolak</button>
+    </div>
+  </form>
+</dialog>
+<% } %>

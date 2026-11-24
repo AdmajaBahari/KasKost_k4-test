@@ -1,0 +1,25 @@
+<section class="auth-card glass-card">
+  <h1><%= judul %></h1>
+  <p class="text-secondary"><%= sub %></p>
+  <% if (info) { %><p class="notice"><%= info %></p><% } %>
+  <% if (error) { %>
+  <div class="alert" role="alert"><%- include('../../partials/icon', { nama: 'alert' }) %><strong><%= error %></strong></div>
+  <% } %>
+  <form method="post" action="<%= aksi %>" class="auth-form" novalidate>
+  <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+    <div class="field">
+      <label for="email">Email</label>
+      <input class="input <%= error ? 'is-error' : '' %>" id="email" type="email" name="email" value="<%= form.email || '' %>" placeholder="nama@email.com" autocomplete="email" required>
+    </div>
+    <%- include('../../partials/password-field', { id: 'password', name: 'password', label: 'Password', autocomplete: 'current-password', hint: null, pesanError: null, tandaiError: !!error }) %>
+    <button class="btn-primary btn-block" type="submit">Masuk</button>
+  </form>
+  <% const dalam = tautan.filter(function (t) { return t.href === '/daftar'; }); %>
+  <% if (dalam.length) { %>
+  <hr class="divider">
+  <p class="text-secondary small"><%= dalam[0].teks %> <a class="link" href="/daftar"><%= dalam[0].label %></a></p>
+  <% } %>
+</section>
+<% tautan.filter(function (t) { return t.href !== '/daftar'; }).forEach(function (t) { %>
+<p class="auth-outside"><a class="link" href="<%= t.href %>"><%= t.label %></a></p>
+<% }) %>

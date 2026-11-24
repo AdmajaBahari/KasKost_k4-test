@@ -1,0 +1,84 @@
+<h1 class="page-h1">Kos</h1>
+<%- include('../../partials/tabs', { tabs: [
+  { label: 'Persetujuan Pendaftar', href: '/pemilik/kos/pendaftar' },
+  { label: 'Kelola Penghuni', href: '/pemilik/kos/penghuni', aktif: true },
+  { label: 'Kelola Kamar', href: '/pemilik/kos/kamar' }
+] }) %>
+
+<% if (info === 'dipindah') { %><p class="notice alert-lebar">Penempatan diubah. Kamar lama kini Kosong.</p><% } %>
+<% if (info === 'dinonaktifkan') { %><p class="notice alert-lebar">Akun penghuni dinonaktifkan dan kamarnya kini Kosong.</p><% } %>
+<% if (info === 'gagal') { %>
+<div class="alert alert-lebar" role="alert"><%- include('../../partials/icon', { nama: 'alert' }) %><strong>Gagal memproses. Kamar tujuan mungkin sudah terisi atau penghuni sudah nonaktif.</strong></div>
+<% } %>
+
+<div class="toolbar">
+  <div class="chips chips-rapat">
+    <a class="chip <%= !status ? 'aktif' : '' %>" href="/pemilik/kos/penghuni">Semua</a>
+    <a class="chip <%= status === 'aktif' ? 'aktif' : '' %>" href="/pemilik/kos/penghuni?status=aktif">Aktif</a>
+    <a class="chip <%= status === 'nonaktif' ? 'aktif' : '' %>" href="/pemilik/kos/penghuni?status=nonaktif">Nonaktif</a>
+  </div>
+  <input class="input input-cari" type="search" data-cari placeholder="Cari nama atau kamar" aria-label="Cari nama atau kamar">
+</div>
+
+<section class="glass-container">
+  <% if (!daftar.length) { %>
+  <p class="text-secondary">Belum ada penghuni.</p>
+  <% } else { %>
+  <div class="tabel-scroll">
+    <table class="tabel tabel-lebar">
+      <thead><tr><th>Kamar</th><th>Nama</th><th>Email</th><th>Status Akun</th><th>Aksi</th></tr></thead>
+      <tbody>
+        <% daftar.forEach(function (p) { %>
+        <tr data-cari-baris="<%= ((p.kamar || '') + ' ' + p.nama + ' ' + p.email).toLowerCase() %>">
+          <td><strong><%= p.kamar || '-' %></strong></td>
+          <td><%= p.nama %></td>
+          <td><%= p.email %></td>
+          <td><span class="pill"><%= p.status === 'aktif' ? 'Aktif' : 'Nonaktif' %></span></td>
+          <td>
+            <% if (p.status === 'aktif') { %>
+            <div class="aksi-baris">
+              <button class="btn-secondary btn-kecil" type="button" data-dialog="dlg-pindah" data-aksi="/pemilik/kos/penghuni/<%= p.id %>/pindah" data-ringkas="<%= p.nama !== '-' ? p.nama : p.email %> · <%= p.kamar || '-' %>">Ubah Penempatan</button>
+              <button class="btn-secondary btn-kecil" type="button" data-dialog="dlg-nonaktif" data-aksi="/pemilik/kos/penghuni/<%= p.id %>/nonaktifkan" data-ringkas="<%= p.nama !== '-' ? p.nama : p.email %> · <%= p.kamar || '-' %>">Nonaktifkan</button>
+            </div>
+            <% } else { %><span class="text-secondary">-</span><% } %>
+          </td>
+        </tr>
+        <% }) %>
+      </tbody>
+    </table>
+  </div>
+  <p class="text-secondary small">Menampilkan <%= daftar.length %> penghuni</p>
+  <% } %>
+</section>
+
+<dialog class="modal" id="dlg-pindah" aria-labelledby="jdl-pindah">
+  <div class="row"><h2 id="jdl-pindah">Ubah Penempatan</h2><button type="button" class="btn-ikon" data-tutup aria-label="Tutup">&times;</button></div>
+  <p><strong data-ringkas></strong></p>
+  <form method="post" action="#" class="auth-form">
+  <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+    <div class="field">
+      <label for="kamar_id">Kamar tujuan</label>
+      <select class="input" id="kamar_id" name="kamar_id" required>
+        <option value="">Pilih kamar</option>
+        <% kosong.forEach(function (k) { %><option value="<%= k.id %>"><%= k.nama %> (Kosong)</option><% }) %>
+      </select>
+      <% if (!kosong.length) { %><p class="hint">Belum ada kamar kosong.</p><% } %>
+    </div>
+    <div class="notice-box"><%- include('../../partials/icon', { nama: 'alert' }) %><div><p class="text-secondary">Hanya kamar kosong yang dapat dipilih. Tagihan bulan berjalan tetap atas nama penghuni ini.</p></div></div>
+    <div class="aksi-baris">
+      <button type="button" class="btn-secondary" data-tutup>Batal</button>
+      <button type="submit" class="btn-primary" <%= kosong.length ? '' : 'disabled' %>>Pindahkan</button>
+    </div>
+  </form>
+</dialog>
+
+<dialog class="modal" id="dlg-nonaktif" aria-labelledby="jdl-nonaktif">
+  <div class="row"><h2 id="jdl-nonaktif">Nonaktifkan akun ini?</h2><button type="button" class="btn-ikon" data-tutup aria-label="Tutup">&times;</button></div>
+  <p><strong data-ringkas></strong></p>
+  <div class="notice-box"><%- include('../../partials/icon', { nama: 'alert' }) %><div><p class="text-secondary">Penghuni tidak dapat masuk dan tidak menerima tagihan baru. Tagihan yang belum lunas tetap tercatat.</p></div></div>
+  <form method="post" action="#" class="aksi-baris">
+  <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+    <button type="button" class="btn-secondary" data-tutup>Batal</button>
+    <button type="submit" class="btn-primary">Ya, Nonaktifkan</button>
+  </form>
+</dialog>

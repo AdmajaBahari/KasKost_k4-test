@@ -1,0 +1,93 @@
+<h1 class="page-h1"><%= peran === 'admin' ? 'Laporan Kas Kos' : 'Laporan Kas Lengkap' %></h1>
+
+<% if (peran === 'pemilik') { %>
+<%- include('../../partials/tabs', { tabs: [
+  { label: 'Laporan Kas Lengkap', href: k.laporan, aktif: true },
+  { label: 'Catat Pengeluaran', href: k.pengeluaran }
+] }) %>
+<% } %>
+
+<div class="toolbar">
+  <form method="get" action="<%= k.laporan %>" class="bulan-form">
+    <select class="input input-bulan" name="bulan" data-auto aria-label="Pilih bulan">
+      <% d.daftarPeriode.forEach(function (p) { %>
+      <option value="<%= p.nilai %>" <%= p.nilai === d.periode ? 'selected' : '' %>><%= p.label %></option>
+      <% }) %>
+    </select>
+    <% if (peran === 'pemilik' && d.lingkup !== 'semua') { %><input type="hidden" name="kas" value="<%= d.lingkup %>"><% } %>
+    <% if (peran === 'admin' && d.jenis) { %><input type="hidden" name="jenis" value="<%= d.jenis %>"><% } %>
+    <noscript><button class="btn-secondary btn-kecil" type="submit">Terapkan</button></noscript>
+  </form>
+  <div class="chips chips-rapat">
+    <% if (peran === 'pemilik') { %>
+      <% [['', 'Semua Kas'], ['kos', 'Kas Kos'], ['pemilik', 'Kas Pemilik']].forEach(function (f) { %>
+      <a class="chip <%= (d.lingkup === 'semua' ? '' : d.lingkup) === f[0] ? 'aktif' : '' %>" href="<%= k.laporan %>?bulan=<%= d.periode %><%= f[0] ? '&kas=' + f[0] : '' %>"><%= f[1] %></a>
+      <% }) %>
+    <% } else { %>
+      <% [['', 'Semua'], ['masuk', 'Pemasukan'], ['keluar', 'Pengeluaran']].forEach(function (f) { %>
+      <a class="chip <%= d.jenis === f[0] ? 'aktif' : '' %>" href="<%= k.laporan %>?bulan=<%= d.periode %><%= f[0] ? '&jenis=' + f[0] : '' %>"><%= f[1] %></a>
+      <% }) %>
+    <% } %>
+  </div>
+</div>
+
+<div class="stat-grid">
+  <div class="glass-card stat">
+    <p class="text-secondary small">Total Pemasukan</p>
+    <p class="stat-nilai"><%= fmt.rupiah(d.totalMasuk) %></p>
+  </div>
+  <div class="glass-card stat">
+    <p class="text-secondary small">Total Pengeluaran</p>
+    <p class="stat-nilai"><%= fmt.rupiah(d.totalKeluar) %></p>
+  </div>
+  <div class="glass-card stat">
+    <p class="text-secondary small"><%= peran === 'admin' ? 'Saldo Kas Kos' : 'Saldo Total' %></p>
+    <p class="stat-nilai"><%= fmt.rupiah(d.saldoTotal) %></p>
+  </div>
+  <% if (peran === 'pemilik') { %>
+  <div class="glass-card stat">
+    <p class="text-secondary small">Rincian Saldo</p>
+    <dl class="kv-list">
+      <% if (d.lingkup !== 'kos') { %><div class="kv"><dt>Kas Pemilik</dt><dd><%= fmt.rupiah(d.saldo.pemilik) %></dd></div><% } %>
+      <% if (d.lingkup !== 'pemilik') { %><div class="kv"><dt>Kas Kos</dt><dd><%= fmt.rupiah(d.saldo.kos) %></dd></div><% } %>
+    </dl>
+  </div>
+  <% } %>
+</div>
+
+<% if (peran === 'admin') { %>
+<p class="notice alert-lebar">Laporan ini hanya memuat Kas Kos.</p>
+<% } %>
+
+<section class="glass-container">
+  <h2>Riwayat Transaksi<%= peran === 'admin' ? ' Kas Kos' : '' %></h2>
+  <% if (!d.baris.length) { %>
+  <p class="text-secondary">Belum ada transaksi pada bulan ini.</p>
+  <% } else { %>
+  <div class="tabel-scroll">
+    <table class="tabel tabel-lebar">
+      <thead>
+        <tr>
+          <th>Tanggal</th><th>Keterangan</th><th>Kategori</th>
+          <% if (peran === 'pemilik') { %><th>Kas</th><% } %>
+          <th>Pemasukan</th><th>Pengeluaran</th><th>Dicatat oleh</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% d.baris.forEach(function (r) { %>
+        <tr>
+          <td><%= fmt.tanggalDM(r.tanggal) %></td>
+          <td><%= r.ket %><% if (r.catatan) { %><br><span class="text-secondary small"><%= r.catatan %></span><% } %></td>
+          <td><%= r.kategori %></td>
+          <% if (peran === 'pemilik') { %><td><%= r.kas === 'kos' ? 'Kas Kos' : 'Kas Pemilik' %></td><% } %>
+          <td><%= r.masuk ? fmt.rupiah(r.masuk) : '-' %></td>
+          <td><%= r.keluar ? fmt.rupiah(r.keluar) : '-' %></td>
+          <td><%= r.oleh %></td>
+        </tr>
+        <% }) %>
+      </tbody>
+    </table>
+  </div>
+  <p class="text-secondary small">Menampilkan <%= d.baris.length %> dari <%= d.jumlahBulan %> transaksi</p>
+  <% } %>
+</section>

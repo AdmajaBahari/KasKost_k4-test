@@ -1,0 +1,52 @@
+<h1 class="page-h1">Beranda Pemilik</h1>
+
+<div class="stat-grid">
+  <div class="glass-card stat">
+    <p class="text-secondary small">Tagihan Lunas</p>
+    <p class="stat-nilai"><%= d.lunas %> dari <%= d.totalKamar %> kamar</p>
+  </div>
+  <div class="glass-card stat">
+    <p class="text-secondary small">Menunggu Verifikasi</p>
+    <p class="stat-nilai"><%= d.antrean %> bukti</p>
+    <a class="link" href="/pemilik/tagihan/antrean">Buka antrean</a>
+  </div>
+  <div class="glass-card stat">
+    <p class="text-secondary small">Pendaftar Baru</p>
+    <p class="stat-nilai"><%= d.pendaftar %> orang</p>
+    <a class="link" href="/pemilik/kos/pendaftar">Lihat pendaftar</a>
+  </div>
+  <div class="glass-card stat">
+    <p class="text-secondary small">Saldo Kas Pemilik</p>
+    <p class="stat-nilai"><%= fmt.rupiah(d.saldo) %></p>
+  </div>
+</div>
+
+<section class="glass-container">
+  <div class="row bar-tabel">
+    <h2>Status Tagihan <%= d.bulan %></h2>
+    <input class="input input-cari" type="search" data-cari placeholder="Cari kamar atau penghuni" aria-label="Cari kamar atau penghuni">
+  </div>
+  <div class="tabel-scroll">
+    <table class="tabel tabel-lebar">
+      <thead>
+        <tr><th>Kamar</th><th>Penghuni</th><th>Kelompok A</th><th>Kelompok B</th><th>Denda</th><th>Status</th></tr>
+      </thead>
+      <tbody>
+        <% if (!d.baris.length) { %>
+        <tr><td colspan="6" class="text-secondary">Belum ada penghuni aktif.</td></tr>
+        <% } %>
+        <% d.baris.forEach(function (r) { %>
+        <tr data-cari-baris="<%= (r.kamar + ' ' + r.nama).toLowerCase() %>">
+          <td><%= r.kamar %></td>
+          <td><%= r.nama %></td>
+          <td><%= r.A ? fmt.rupiah(r.A.total) : '-' %></td>
+          <td><%= r.B ? fmt.rupiah(r.B.total) : '-' %></td>
+          <td><%= r.DENDA ? fmt.rupiah(r.DENDA.total) : '-' %></td>
+          <td><%- include('../../partials/badge', { status: r.status }) %></td>
+        </tr>
+        <% }) %>
+      </tbody>
+    </table>
+  </div>
+  <p class="text-secondary small">Menampilkan <%= d.baris.length %> dari <%= d.totalKamar %> kamar</p>
+</section>

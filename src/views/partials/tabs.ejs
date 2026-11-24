@@ -1,0 +1,5 @@
+<nav class="tabs" aria-label="Sub menu">
+  <% tabs.forEach(function (tb) { %>
+  <a class="tab <%= tb.aktif ? 'aktif' : '' %>" href="<%= tb.href %>"<%- tb.aktif ? ' aria-current="page"' : '' %>><%= tb.label %></a>
+  <% }) %>
+</nav>

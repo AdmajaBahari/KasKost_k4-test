@@ -1,0 +1,20 @@
+<section class="auth-card glass-card">
+  <%- include('../../partials/stepper', { langkah: 2 }) %>
+  <h1>Verifikasi email</h1>
+  <p class="text-secondary">Masukkan 6 digit kode yang dikirim ke <strong><%= email %></strong>. Kode berlaku 10 menit.</p>
+  <% if (dev) { %><p class="notice">Mode development: kode tampil di terminal server (bukan di email).</p><% } %>
+  <% if (info) { %><p class="notice"><%= info %></p><% } %>
+  <form method="post" action="/verifikasi" class="auth-form" novalidate>
+  <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+    <div class="field">
+      <label for="kode">Kode verifikasi</label>
+      <input class="input code-input <%= error ? 'is-error' : '' %>" id="kode" name="kode" inputmode="numeric" pattern="[0-9]*" maxlength="6" autocomplete="one-time-code" placeholder="000000" required>
+      <% if (error) { %><p class="error" role="alert"><%= error %></p><% } %>
+    </div>
+    <button class="btn-primary btn-block" type="submit">Verifikasi</button>
+  </form>
+  <form method="post" action="/verifikasi/kirim-ulang">
+  <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+    <button class="btn-secondary" type="submit">Kirim ulang kode</button>
+  </form>
+</section>

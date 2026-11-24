@@ -1,0 +1,41 @@
+<h1 class="page-h1">Notifikasi</h1>
+
+<div class="row bar-tabel">
+  <%- include('../../partials/tabs', { tabs: [
+    { label: 'Semua', href: '/notifikasi', aktif: tab === 'semua' },
+    { label: 'Belum Dibaca' + (notifBelumDibaca > 0 ? ' (' + notifBelumDibaca + ')' : ''), href: '/notifikasi?tab=belum', aktif: tab === 'belum' }
+  ] }) %>
+  <% if (notifBelumDibaca > 0) { %>
+  <form method="post" action="/notifikasi/baca-semua">
+  <input type="hidden" name="_csrf" value="<%= csrfToken %>"><button class="btn-secondary btn-kecil" type="submit">Tandai semua dibaca</button></form>
+  <% } %>
+</div>
+
+<% if (!daftar.length) { %>
+<section class="glass-container">
+  <h2><%= tab === 'belum' ? 'Semua sudah dibaca' : 'Belum ada notifikasi' %></h2>
+  <p class="text-secondary"><%= tab === 'belum' ? 'Tidak ada notifikasi yang belum dibaca.' : 'Pemberitahuan tentang tagihan dan akunmu akan muncul di sini.' %></p>
+</section>
+<% } else { %>
+<ul class="notif-list">
+  <% daftar.forEach(function (n) { %>
+  <li class="notif <%= n.dibaca ? '' : 'baru' %>">
+    <span class="notif-ikon"><%- include('../../partials/icon', { nama: n.ikon }) %></span>
+    <div class="notif-isi">
+      <strong><%= n.judul %></strong>
+      <% if (n.isi) { %><p class="text-secondary small"><%= n.isi %></p><% } %>
+    </div>
+    <div class="notif-meta">
+      <span class="text-secondary small"><%= n.waktu %></span>
+      <% if (!n.dibaca) { %>
+      <form method="post" action="/notifikasi/<%= n.id %>/baca">
+  <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+        <input type="hidden" name="tab" value="<%= tab %>">
+        <button class="badge badge-tombol" type="submit" title="Tandai sudah dibaca">Baru</button>
+      </form>
+      <% } %>
+    </div>
+  </li>
+  <% }) %>
+</ul>
+<% } %>

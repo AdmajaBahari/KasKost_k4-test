@@ -1,0 +1,57 @@
+<%
+const aktif = (h) => path === h || (!['/pemilik', '/admin'].includes(h) && path.startsWith(h + '/'));
+const namaPeran = { penghuni: 'Penghuni', pemilik: 'Pemilik', admin: 'Admin' }[user.role];
+%>
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="csrf-token" content="<%= csrfToken %>">
+  <title><%= typeof title !== 'undefined' ? title + ' · ' : '' %>KasKost</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <div class="bg-ribbon"></div>
+  <div class="bg-scrim"></div>
+
+  <header class="app-header">
+    <a class="logo" href="/">LOGO</a>
+    <nav class="nav-pill" aria-label="Navigasi utama">
+      <% navCfg.nav.forEach(function (n) { %>
+      <a class="nav-link <%= aktif(n.href) ? 'aktif' : '' %>" href="<%= n.href %>"<%- aktif(n.href) ? ' aria-current="page"' : '' %>><%= n.label %></a>
+      <% }) %>
+    </nav>
+    <details class="user-menu">
+      <summary class="avatar-btn" aria-label="Menu akun"><%- include('../partials/icon', { nama: 'user' }) %></summary>
+      <div class="menu glass-card">
+        <div>
+          <strong><%= user.nama_lengkap || user.email %></strong>
+          <p class="text-secondary small"><%= namaPeran %></p>
+        </div>
+        <form method="post" action="/keluar">
+  <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+          <button class="btn-secondary" type="submit">Keluar</button>
+        </form>
+      </div>
+    </details>
+  </header>
+
+  <aside class="sidebar" aria-label="Pintasan">
+    <% navCfg.sidebar.forEach(function (s) { %>
+    <a class="side-item <%= aktif(s.href) ? 'aktif' : '' %>" href="<%= s.href %>" aria-label="<%= s.label %>" title="<%= s.label %>">
+      <% if (s.huruf) { %><span class="huruf"><%= s.huruf %></span><% } else { %><%- include('../partials/icon', { nama: s.ikon }) %><% } %>
+      <% if (s.badge && notifBelumDibaca > 0) { %><span class="badge-count"><%= notifBelumDibaca > 9 ? '9+' : notifBelumDibaca %></span><% } %>
+    </a>
+    <% }) %>
+  </aside>
+
+  <main class="app-main">
+    <%- body %>
+  </main>
+  <script src="/js/app.js"></script>
+</body>
+</html>

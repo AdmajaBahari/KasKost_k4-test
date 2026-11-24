@@ -1,0 +1,50 @@
+<% if (!data) { %>
+<section class="glass-container summary">
+  <h1>Beranda</h1>
+  <p class="text-secondary">Akunmu belum terhubung ke kamar yang aktif. Hubungi Pemilik kos.</p>
+</section>
+<% } else if (!data.kartu.length) { %>
+<section class="glass-container summary">
+  <h1>Beranda</h1>
+  <p class="text-secondary">Belum ada tagihan untuk bulan ini.</p>
+</section>
+<% } else { %>
+<section class="glass-container summary">
+  <div class="summary-head">
+    <div>
+      <p class="text-secondary">Tagihan bulan ini</p>
+      <h1><%= data.bulan %></h1>
+      <p class="text-secondary small"><%= fmt.teksBatas(data.sisa, data.batasBayar) %></p>
+    </div>
+    <div class="summary-total">
+      <p class="text-secondary">Total</p>
+      <p class="big"><%= fmt.rupiah(data.total) %></p>
+      <p class="text-secondary small status-line">Status: <%- include('../../partials/badge', { status: data.status }) %></p>
+    </div>
+  </div>
+
+  <div class="cards">
+    <% data.kartu.forEach(function (k) { %>
+    <article class="glass-card">
+      <div class="row">
+        <h2><%= k.label %></h2>
+        <%- include('../../partials/badge', { status: k.status }) %>
+      </div>
+      <p class="amount"><%= fmt.rupiah(k.total) %></p>
+      <hr class="divider">
+      <dl class="kv-list">
+        <div class="kv"><dt>Rekening tujuan</dt><dd><%= k.rekening ? k.rekening.bank + ' ' + k.rekening.nomor : '-' %></dd></div>
+        <div class="kv"><dt>a.n.</dt><dd><%= k.rekening ? k.rekening.atas_nama : '-' %></dd></div>
+        <div class="kv"><dt>Batas bayar</dt><dd><%= k.batas_bayar ? fmt.tanggalPendek(k.batas_bayar) : 'Segera' %></dd></div>
+      </dl>
+      <% if (k.sejak) { %><p class="text-secondary small">Nominal berlaku terbaru per <%= fmt.tanggalPendek(k.sejak) %></p><% } %>
+      <% if (k.status === 'lunas' || k.status === 'menunggu_verifikasi') { %>
+      <a class="btn-secondary" href="/tagihan/<%= k.id %>">Lihat detail</a>
+      <% } else { %>
+      <a class="btn-primary btn-block" href="/tagihan/<%= k.id %>"><%- include('../../partials/icon', { nama: 'upload' }) %>Unggah Bukti</a>
+      <% } %>
+    </article>
+    <% }) %>
+  </div>
+</section>
+<% } %>

@@ -1,0 +1,88 @@
+<a class="back" href="/beranda">&lt; Kembali ke Beranda</a>
+<div class="page-title">
+  <h1><%= judul %></h1>
+  <%- include('../../partials/badge', { status: t.status }) %>
+</div>
+
+<div class="two-col">
+  <div class="col">
+    <section class="glass-card">
+      <div class="row">
+        <h2>Rincian Tagihan</h2>
+        <span class="text-secondary small">Periode: <%= fmt.bulanTahun(t.periode) %></span>
+      </div>
+      <hr class="divider">
+      <dl class="kv-list">
+        <% t.tagihan_item.forEach(function (i) { %>
+        <div class="kv"><dt><%= i.label %></dt><dd><%= fmt.rupiah(i.nominal) %></dd></div>
+        <% }) %>
+      </dl>
+      <hr class="divider">
+      <div class="row"><h2>Total <%= judul %></h2><p class="big"><%= fmt.rupiah(t.total) %></p></div>
+      <div class="kv"><dt>Batas bayar</dt><dd><%= t.batas_bayar ? fmt.tanggalPendek(t.batas_bayar) : 'Segera' %></dd></div>
+    </section>
+
+    <section class="glass-card">
+      <h2>Transfer ke</h2>
+      <% if (rek) { %>
+      <dl class="kv-list">
+        <div class="kv"><dt>Bank</dt><dd><%= rek.bank %></dd></div>
+        <div class="kv">
+          <dt>Nomor rekening</dt>
+          <dd class="kv-aksi"><span><%= rek.nomor %></span><button type="button" class="btn-secondary btn-kecil" data-salin="<%= rek.nomor %>">Salin</button></dd>
+        </div>
+        <div class="kv"><dt>Atas nama</dt><dd><%= rek.atas_nama %></dd></div>
+      </dl>
+      <% } else { %><p class="text-secondary">Rekening tujuan belum diatur.</p><% } %>
+    </section>
+  </div>
+
+  <div class="col">
+    <section class="glass-card">
+      <h2>Cara membayar</h2>
+      <ol class="steps">
+        <li>Transfer tepat <%= fmt.rupiah(t.total) %> lewat bank atau dompet digital</li>
+        <li>Foto bukti transfer sampai nominal terlihat jelas</li>
+        <li>Unggah bukti di tombol di bawah</li>
+      </ol>
+      <div class="notice-box">
+        <%- include('../../partials/icon', { nama: 'alert' }) %>
+        <div><strong>Pembayaran sebagian tidak diterima.</strong><p class="text-secondary">Nominal bukti harus sama persis dengan nominal tagihan.</p></div>
+      </div>
+    </section>
+
+    <section class="glass-card">
+      <p>Sisa percobaan: <%= p.sisa %> dari <%= p.maks %></p>
+      <p class="text-secondary small">Bukti yang ditolak mengurangi sisa percobaan.</p>
+    </section>
+
+    <% if (boleh) { %>
+    <a class="btn-primary" href="/tagihan/<%= t.id %>/unggah"><%- include('../../partials/icon', { nama: 'upload' }) %>Unggah Bukti</a>
+    <% } else if (t.status === 'lunas') { %>
+    <p class="notice">Pembayaran sudah diterima. Terima kasih.</p>
+    <% } else if (t.status === 'menunggu_verifikasi') { %>
+    <p class="notice">Bukti sedang diperiksa pengelola. Kamu akan menerima notifikasi setelah diperiksa.</p>
+    <% } else { %>
+    <p class="notice">Sisa percobaan habis. Hubungi pengelola.</p>
+    <% } %>
+
+    <section class="glass-card">
+      <h2 class="h-kecil">Riwayat upaya (opsional)</h2>
+      <table class="tabel">
+        <thead><tr><th>Tanggal</th><th>Hasil</th><th>Alasan</th></tr></thead>
+        <tbody>
+          <% if (!upaya.length) { %>
+          <tr><td colspan="3" class="text-secondary">Belum ada upaya</td></tr>
+          <% } %>
+          <% upaya.forEach(function (u) { %>
+          <tr>
+            <td><%= fmt.tanggalPendek(fmt.tanggalWIB(u.created_at)) %></td>
+            <td><%= fmt.HASIL_BUKTI[u.status] || u.status %></td>
+            <td class="text-secondary"><%= u.alasan_penolakan || '-' %></td>
+          </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    </section>
+  </div>
+</div>

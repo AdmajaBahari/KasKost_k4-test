@@ -1,0 +1,68 @@
+<a class="back" href="/tagihan/<%= t.id %>">&lt; Kembali ke Detail Item</a>
+<h1 class="page-h1">Unggah Bukti Transfer</h1>
+
+<% if (error) { %>
+<div class="alert alert-lebar" role="alert"><%- include('../../partials/icon', { nama: 'alert' }) %><strong><%= error %></strong></div>
+<% } %>
+
+<form id="form-unggah" class="two-col" method="post" action="/tagihan/<%= t.id %>/unggah" enctype="multipart/form-data">
+  <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+  <div class="col">
+    <section class="glass-card">
+      <div class="row">
+        <span class="text-secondary">Anda membayar</span>
+        <%- include('../../partials/badge', { status: t.status }) %>
+      </div>
+      <h2><%= judul %>: <%= ringkas %></h2>
+      <p class="text-secondary small">Transfer tepat <%= fmt.rupiah(t.total) %><% if (rek) { %> ke <%= rek.bank %> <%= rek.nomor %> a.n. <%= rek.atas_nama %><% } %></p>
+    </section>
+
+    <section class="dropzone">
+      <input class="visually-hidden" id="bukti" type="file" name="bukti" accept="image/jpeg,image/png,image/webp">
+      <div class="drop-kosong" id="drop-kosong">
+        <div class="preview-box"><%- include('../../partials/icon', { nama: 'upload' }) %></div>
+        <h2>Pilih foto bukti transfer</h2>
+        <p class="text-secondary small">JPG, PNG, atau WebP, maksimal 5 MB.</p>
+        <label class="btn-secondary" for="bukti">Pilih Foto</label>
+      </div>
+      <div class="drop-isi" id="drop-isi" hidden>
+        <img id="pratinjau" class="preview-img" alt="Pratinjau bukti transfer">
+        <h2>Foto siap dikirim</h2>
+        <p class="text-secondary small" id="nama-file"></p>
+        <p class="text-secondary small">Pastikan nominal terlihat jelas sebelum mengirim.</p>
+        <label class="btn-secondary" for="bukti">Ganti Foto</label>
+      </div>
+      <p class="error" id="galat-file" role="alert" hidden></p>
+    </section>
+    <p class="text-secondary small">Bukti transfer hanya dapat dilihat oleh Anda dan pengelola yang berwenang.</p>
+  </div>
+
+  <div class="col">
+    <section class="glass-card">
+      <h2>Agar bukti terbaca</h2>
+      <ul class="checklist">
+        <li><%- include('../../partials/icon', { nama: 'check' }) %>Nominal transfer terlihat jelas</li>
+        <li><%- include('../../partials/icon', { nama: 'check' }) %>Seluruh bukti masuk bingkai, tidak terpotong</li>
+        <li><%- include('../../partials/icon', { nama: 'check' }) %>Foto tidak buram dan cahaya cukup</li>
+        <li><%- include('../../partials/icon', { nama: 'check' }) %>Gunakan bukti transfer terbaru</li>
+      </ul>
+      <div class="notice-box">
+        <%- include('../../partials/icon', { nama: 'alert' }) %>
+        <div><strong>Satu bukti hanya untuk satu tagihan.</strong><p class="text-secondary">Bukti yang pernah dipakai akan ditolak.</p></div>
+      </div>
+    </section>
+    <section class="glass-card">
+      <p>Sisa percobaan: <%= p.sisa %> dari <%= p.maks %></p>
+      <p class="text-secondary small">Bukti yang ditolak mengurangi sisa percobaan.</p>
+    </section>
+    <button class="btn-primary" id="kirim" type="submit" disabled>Kirim Bukti</button>
+  </div>
+</form>
+
+<div class="overlay" id="overlay" role="status" aria-live="polite" hidden>
+  <div class="overlay-card glass-card">
+    <div class="spinner"></div>
+    <h2>Membaca bukti transfer</h2>
+    <p class="text-secondary small">Mohon tunggu sebentar dan jangan tutup halaman ini.</p>
+  </div>
+</div>

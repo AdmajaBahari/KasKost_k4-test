@@ -1,0 +1,101 @@
+<% const g = (f) => galat[f] || null; %>
+<h1 class="page-h1">Pengaturan</h1>
+
+<% if (info === 'nama') { %><p class="notice alert-lebar">Nama tersimpan.</p><% } %>
+<% if (info === 'password') { %><p class="notice alert-lebar">Password berhasil diubah.</p><% } %>
+<% if (info === 'email') { %><p class="notice alert-lebar">Email berhasil diubah. Gunakan email baru saat masuk.</p><% } %>
+<% if (info === 'kode') { %><p class="notice alert-lebar">Kode verifikasi dikirim ke email baru.</p><% } %>
+<% if (info === 'tunggu') { %><p class="notice alert-lebar">Tunggu <%= detik %> detik sebelum meminta kode baru.</p><% } %>
+<% if (g('kode') && !profil.pending) { %>
+<div class="alert alert-lebar" role="alert"><%- include('../../partials/icon', { nama: 'alert' }) %><strong><%= g('kode') %></strong></div>
+<% } %>
+
+<div class="dua-sama">
+  <section class="glass-card">
+    <h2>Biodata</h2>
+    <form method="post" action="<%= basis %>/nama" class="auth-form" novalidate>
+  <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+      <div class="field">
+        <label for="nama">Nama lengkap</label>
+        <input class="input <%= g('nama') ? 'is-error' : '' %>" id="nama" type="text" name="nama" maxlength="60" autocomplete="name" value="<%= form.nama != null ? form.nama : profil.nama %>" required>
+        <% if (g('nama')) { %><p class="error" role="alert"><%= g('nama') %></p><% } %>
+      </div>
+
+      <div class="field">
+        <label for="email-samar">Email</label>
+        <div class="baris-email">
+          <input class="input" id="email-samar" type="text" value="<%= profil.emailSamar %>" disabled>
+          <button class="btn-secondary" type="button" data-dialog="dlg-email">Ubah Email</button>
+        </div>
+        <p class="hint">Perubahan email perlu verifikasi kode.</p>
+      </div>
+
+      <% if (peran === 'penghuni') { %>
+      <div class="field">
+        <label for="kamar">Nomor kamar</label>
+        <input class="input" id="kamar" type="text" value="<%= profil.kamar || '-' %>" disabled>
+        <p class="hint">Diatur oleh Pemilik.</p>
+      </div>
+      <% } %>
+
+      <button class="btn-primary btn-auto" type="submit">Simpan</button>
+      <p class="hint">Email dan biodata Anda tidak ditampilkan ke penghuni lain.</p>
+    </form>
+  </section>
+
+  <div class="col">
+    <section class="glass-card">
+      <h2>Password</h2>
+      <form method="post" action="<%= basis %>/password" class="auth-form" novalidate>
+  <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+        <%- include('../../partials/password-field', { id: 'pw-sekarang', name: 'sekarang', label: 'Password saat ini', autocomplete: 'current-password', hint: null, pesanError: g('sekarang') }) %>
+        <%- include('../../partials/password-field', { id: 'pw-baru', name: 'baru', label: 'Password baru', autocomplete: 'new-password', hint: 'Minimal 8 karakter, kombinasi huruf dan angka.', pesanError: g('baru') }) %>
+        <%- include('../../partials/password-field', { id: 'pw-konfirmasi', name: 'konfirmasi', label: 'Konfirmasi password baru', autocomplete: 'new-password', hint: null, pesanError: g('konfirmasi') }) %>
+        <button class="btn-primary btn-block" type="submit">Ubah Password</button>
+      </form>
+    </section>
+    <form method="post" action="/keluar">
+  <input type="hidden" name="_csrf" value="<%= csrfToken %>"><button class="btn-secondary btn-block" type="submit">Keluar</button></form>
+  </div>
+</div>
+
+<dialog class="modal" id="dlg-email" aria-labelledby="jdl-email"<%- buka === 'dlg-email' ? ' data-buka' : '' %>>
+  <div class="row"><h2 id="jdl-email">Ubah Email</h2><button type="button" class="btn-ikon" data-tutup aria-label="Tutup">&times;</button></div>
+  <form method="post" action="<%= basis %>/email" class="auth-form" novalidate>
+  <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+    <div class="field">
+      <label for="email-baru">Email baru</label>
+      <input class="input <%= g('email') ? 'is-error' : '' %>" id="email-baru" type="email" name="email_baru" value="<%= form.email_baru || '' %>" placeholder="nama@email.com" autocomplete="email" required>
+      <% if (g('email')) { %><p class="error" role="alert"><%= g('email') %></p><% } %>
+    </div>
+    <%- include('../../partials/password-field', { id: 'pw-email', name: 'password', label: 'Password saat ini', autocomplete: 'current-password', hint: null, pesanError: g('pwEmail') }) %>
+    <p class="hint">Kami akan mengirim kode ke email baru.</p>
+    <div class="aksi-baris">
+      <button type="button" class="btn-secondary" data-tutup>Batal</button>
+      <button type="submit" class="btn-primary">Kirim Kode</button>
+    </div>
+  </form>
+</dialog>
+
+<% if (profil.pending) { %>
+<dialog class="modal" id="dlg-kode" aria-labelledby="jdl-kode" data-buka>
+  <div class="row"><h2 id="jdl-kode">Verifikasi Email Baru</h2><button type="button" class="btn-ikon" data-tutup aria-label="Tutup">&times;</button></div>
+  <p class="text-secondary">Masukkan 6 digit kode yang dikirim ke <strong><%= profil.pendingSamar %></strong>. Kode berlaku 10 menit.</p>
+  <% if (dev) { %><p class="notice">Mode development: kode tampil di terminal server (bukan di email).</p><% } %>
+  <form method="post" action="<%= basis %>/email/verifikasi" class="auth-form" novalidate>
+  <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+    <div class="field">
+      <label for="kode">Kode verifikasi</label>
+      <input class="input code-input <%= g('kode') ? 'is-error' : '' %>" id="kode" name="kode" inputmode="numeric" pattern="[0-9]*" maxlength="6" autocomplete="one-time-code" placeholder="000000" required>
+      <% if (g('kode')) { %><p class="error" role="alert"><%= g('kode') %></p><% } %>
+    </div>
+    <button type="submit" class="btn-primary btn-block">Verifikasi</button>
+  </form>
+  <div class="aksi-baris">
+    <form method="post" action="<%= basis %>/email/kirim-ulang">
+  <input type="hidden" name="_csrf" value="<%= csrfToken %>"><button class="btn-secondary btn-kecil" type="submit">Kirim ulang kode</button></form>
+    <form method="post" action="<%= basis %>/email/batal">
+  <input type="hidden" name="_csrf" value="<%= csrfToken %>"><button class="btn-secondary btn-kecil" type="submit">Batalkan perubahan</button></form>
+  </div>
+</dialog>
+<% } %>
