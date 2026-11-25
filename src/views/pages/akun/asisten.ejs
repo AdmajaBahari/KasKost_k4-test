@@ -1,6 +1,4 @@
 <%
-const halaman = [];
-for (let i = 0; i < daftar.length; i += 3) halaman.push(daftar.slice(i, i + 3));
 const sumber = peran === 'penghuni' ? 'tagihan Anda' : 'kos dan kas';
 %>
 <div class="asisten">
@@ -20,19 +18,15 @@ const sumber = peran === 'penghuni' ? 'tagihan Anda' : 'kos dan kas';
     <p class="label-teks">Pilih pertanyaan</p>
     <div class="carousel">
       <button type="button" class="btn-ikon" data-geser="-1" aria-label="Pertanyaan sebelumnya">&lsaquo;</button>
-      <div class="slides">
-        <% halaman.forEach(function (grup, i) { %>
-        <div class="slide" data-slide="<%= i %>">
-          <% grup.forEach(function (q) { %>
-          <button type="button" class="chip chip-tanya" data-pertanyaan="<%= q.id %>"><%= q.teks %></button>
-          <% }) %>
-        </div>
+      <div class="slides" id="slides">
+        <% daftar.forEach(function (q) { %>
+        <div class="slot"><button type="button" class="chip chip-tanya" data-pertanyaan="<%= q.id %>"><%= q.teks %></button></div>
         <% }) %>
       </div>
       <button type="button" class="btn-ikon" data-geser="1" aria-label="Pertanyaan berikutnya">&rsaquo;</button>
     </div>
     <div class="titik" aria-hidden="true">
-      <% halaman.forEach(function () { %><span></span><% }) %>
+      <% daftar.forEach(function () { %><span></span><% }) %>
     </div>
   </div>
 

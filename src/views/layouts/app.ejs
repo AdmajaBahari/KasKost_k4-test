@@ -1,6 +1,9 @@
 <%
 const aktif = (h) => path === h || (!['/pemilik', '/admin'].includes(h) && path.startsWith(h + '/'));
 const namaPeran = { penghuni: 'Penghuni', pemilik: 'Pemilik', admin: 'Admin' }[user.role];
+const samarkan = (e) => { const i = e.indexOf('@'); return i < 0 ? e : e.slice(0, Math.min(2, i)) + '***' + e.slice(i); };
+const profil = navCfg.sidebar[0];
+const pintasan = navCfg.sidebar.slice(1);
 %>
 <!DOCTYPE html>
 <html lang="id">
@@ -19,7 +22,7 @@ const namaPeran = { penghuni: 'Penghuni', pemilik: 'Pemilik', admin: 'Admin' }[u
   <div class="bg-scrim"></div>
 
   <header class="app-header">
-    <a class="logo" href="/">LOGO</a>
+    <a class="logo" href="/" aria-label="The KasKost — beranda"><img src="/img/logo.png" alt="The KasKost" width="520" height="242"></a>
     <nav class="nav-pill" aria-label="Navigasi utama">
       <% navCfg.nav.forEach(function (n) { %>
       <a class="nav-link <%= aktif(n.href) ? 'aktif' : '' %>" href="<%= n.href %>"<%- aktif(n.href) ? ' aria-current="page"' : '' %>><%= n.label %></a>
@@ -41,7 +44,11 @@ const namaPeran = { penghuni: 'Penghuni', pemilik: 'Pemilik', admin: 'Admin' }[u
   </header>
 
   <aside class="sidebar" aria-label="Pintasan">
-    <% navCfg.sidebar.forEach(function (s) { %>
+    <a class="side-item side-profil <%= aktif(profil.href) ? 'aktif' : '' %>" href="<%= profil.href %>" id="profil-toggle" data-profil
+       aria-label="<%= profil.label %>" title="<%= profil.label %>" aria-haspopup="true" aria-expanded="false" aria-controls="profil-pop">
+      <% if (profil.huruf) { %><span class="huruf"><%= profil.huruf %></span><% } else { %><%- include('../partials/icon', { nama: profil.ikon }) %><% } %>
+    </a>
+    <% pintasan.forEach(function (s) { %>
     <a class="side-item <%= aktif(s.href) ? 'aktif' : '' %>" href="<%= s.href %>" aria-label="<%= s.label %>" title="<%= s.label %>">
       <% if (s.huruf) { %><span class="huruf"><%= s.huruf %></span><% } else { %><%- include('../partials/icon', { nama: s.ikon }) %><% } %>
       <% if (s.badge && notifBelumDibaca > 0) { %><span class="badge-count"><%= notifBelumDibaca > 9 ? '9+' : notifBelumDibaca %></span><% } %>
@@ -49,9 +56,32 @@ const namaPeran = { penghuni: 'Penghuni', pemilik: 'Pemilik', admin: 'Admin' }[u
     <% }) %>
   </aside>
 
+  <!-- Popup profil: sidebar membesar menjadi kartu (dibuka dari ikon profil) -->
+  <div class="profil-pop" id="profil-pop" role="dialog" aria-label="Profil dan pintasan" hidden>
+    <div class="profil-avatar"><%- include('../partials/icon', { nama: 'user' }) %></div>
+    <div class="profil-info">
+      <strong><%= user.nama_lengkap || user.email %></strong>
+      <span><%= user.role === 'penghuni' ? (kamarUser || 'Belum ada kamar') : namaPeran %></span>
+      <span class="profil-email"><%= samarkan(user.email) %></span>
+    </div>
+    <hr class="divider">
+    <nav class="profil-menu" aria-label="Pintasan akun">
+      <% pintasan.forEach(function (s) { %>
+      <a class="pop-item <%= aktif(s.href) ? 'aktif' : '' %>" href="<%= s.href %>">
+        <span class="pop-ikon">
+          <%- include('../partials/icon', { nama: s.ikon || 'user' }) %>
+          <% if (s.badge && notifBelumDibaca > 0) { %><span class="badge-count"><%= notifBelumDibaca > 9 ? '9+' : notifBelumDibaca %></span><% } %>
+        </span>
+        <span><%= s.label %></span>
+      </a>
+      <% }) %>
+    </nav>
+  </div>
+
   <main class="app-main">
     <%- body %>
   </main>
   <script src="/js/app.js"></script>
+  <script src="/js/transisi.js"></script>
 </body>
 </html>

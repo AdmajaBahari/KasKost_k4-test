@@ -19,30 +19,10 @@ router.use(require('./akunRoutes'));
 router.use(require('./asistenRoutes'));
 router.get('/beranda', wajibLogin('penghuni'), tangkap(penghuni.beranda));
 
-// Halaman sementara untuk menu yang belum dibangun
-const segera = (judul) => (req, res) => res.render('pages/segera', { title: judul, judul });
-router.get('/riwayat', wajibLogin('penghuni'), segera('Riwayat'));
-router.get('/pengaturan', wajibLogin('penghuni'), segera('Pengaturan'));
-router.get('/tagihan/:id', wajibLogin('penghuni'), segera('Detail Tagihan'));
-router.get('/asisten', wajibLogin(), segera('Asisten AI'));
-router.get('/notifikasi', wajibLogin(), segera('Notifikasi'));
-
-// ----- Pemilik -----
+// ----- Pemilik & Admin -----
 router.use(require('./pengelolaRoutes'));
 router.use(require('./kasRoutes'));
-router.get('/pemilik', wajibLogin('pemilik'), (req, res) =>
-  res.render('pages/dashboard', { title: 'Beranda Pemilik', peran: 'Pemilik' }));
-router.get('/pemilik/tagihan', wajibLogin('pemilik'), segera('Tagihan'));
-router.get('/pemilik/kas', wajibLogin('pemilik'), segera('Kas'));
-router.get('/pemilik/kos', wajibLogin('pemilik'), segera('Kos'));
-router.get('/pemilik/pengaturan', wajibLogin('pemilik'), segera('Pengaturan'));
 
-// ----- Admin -----
-router.get('/admin', wajibLogin('admin'), (req, res) =>
-  res.render('pages/dashboard', { title: 'Beranda Admin', peran: 'Admin' }));
-router.get('/admin/tagihan', wajibLogin('admin'), segera('Tagihan'));
-router.get('/admin/kas', wajibLogin('admin'), segera('Kas'));
-router.get('/admin/pengaturan', wajibLogin('admin'), segera('Pengaturan'));
 
 // Cek koneksi ke Supabase (hapus nanti saat produksi)
 router.get('/health', async (req, res) => {

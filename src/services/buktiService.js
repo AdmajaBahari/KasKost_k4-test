@@ -26,9 +26,19 @@ async function maksPercobaan() {
 
 async function infoPercobaan(tagihanId) {
   const maks = await maksPercobaan();
-  const { count, error } = await supabase.from('bukti_pembayaran')
+
+  // Penolakan manual oleh pengelola membuka putaran percobaan baru. Tanpa ini penghuni yang
+  // buktinya ditolak pengelola tidak akan pernah bisa mengunggah lagi (sisa tetap 0).
+  const { data: manual, error: eM } = await supabase.from('bukti_pembayaran').select('diverifikasi_at')
+    .eq('tagihan_id', tagihanId).eq('status', 'ditolak').not('diverifikasi_oleh', 'is', null)
+    .order('diverifikasi_at', { ascending: false }).limit(1).maybeSingle();
+  if (eM) throw eM;
+
+  let q = supabase.from('bukti_pembayaran')
     .select('id', { count: 'exact', head: true })
     .eq('tagihan_id', tagihanId).in('status', STATUS_TERPAKAI);
+  if (manual && manual.diverifikasi_at) q = q.gt('created_at', manual.diverifikasi_at);
+  const { count, error } = await q;
   if (error) throw error;
   const terpakai = count || 0;
   return { maks, terpakai, sisa: Math.max(maks - terpakai, 0) };

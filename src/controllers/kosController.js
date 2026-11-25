@@ -32,7 +32,7 @@ async function penghuni(req, res) {
   const kosong = await kos.kamarKosong();
   res.render('pages/pengelola/kos-penghuni', {
     title: 'Kos', daftar, kosong, status,
-    info: infoValid(req.query.info, ['dipindah', 'dinonaktifkan', 'gagal'])
+    info: infoValid(req.query.info, ['dipindah', 'dinonaktifkan', 'diaktifkan', 'gagal'])
   });
 }
 
@@ -47,6 +47,13 @@ async function nonaktifkanPenghuni(req, res) {
   if (!UUID.test(req.params.id)) return res.redirect('/pemilik/kos/penghuni?info=gagal');
   const r = await kos.nonaktifkanPenghuni(req.params.id);
   res.redirect(`/pemilik/kos/penghuni?info=${r.ok ? 'dinonaktifkan' : 'gagal'}`);
+}
+
+async function aktifkanPenghuni(req, res) {
+  const kamarId = String((req.body && req.body.kamar_id) || '');
+  if (!UUID.test(req.params.id) || !UUID.test(kamarId)) return res.redirect('/pemilik/kos/penghuni?info=gagal');
+  const r = await kos.aktifkanPenghuni(req.params.id, kamarId);
+  res.redirect(`/pemilik/kos/penghuni?info=${r.ok ? 'diaktifkan' : 'gagal'}`);
 }
 
 // ----- Kelola kamar -----
@@ -84,6 +91,6 @@ async function aktifkanKamar(req, res) {
 }
 
 module.exports = {
-  semuaTagihan, lihatBukti, penghuni, pindah, nonaktifkanPenghuni,
+  semuaTagihan, lihatBukti, penghuni, pindah, nonaktifkanPenghuni, aktifkanPenghuni,
   kamar, tambahKamar, ubahKamar, nonaktifkanKamar, aktifkanKamar
 };

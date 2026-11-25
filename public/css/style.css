@@ -419,3 +419,112 @@ button.chip:disabled { opacity: 0.6; cursor: wait; }
 .titik { display: flex; gap: 6px; justify-content: center; }
 .titik span { width: 6px; height: 6px; border-radius: 50%; background: var(--glass-stroke); }
 .titik span.aktif { background: #fff; }
+
+/* ===== Logo gambar ===== */
+.logo { display: inline-block; justify-self: start; line-height: 0; }
+.logo img { display: block; height: 56px; width: auto; }
+.auth-logo { display: block; line-height: 0; z-index: 5; }
+.auth-logo img { display: block; height: 64px; width: auto; }
+@media (max-width: 1100px) {
+  .logo img { height: 44px; }
+  .auth-logo img { height: 48px; }
+}
+
+/* ===== Popup profil (sidebar membesar menjadi kartu) ===== */
+.profil-pop {
+  position: fixed; left: var(--layout-margin); top: clamp(100px, calc(100vh - 520px), 330px); z-index: 20;
+  width: 320px; max-width: calc(100vw - 2 * var(--space-4)); max-height: calc(100vh - 120px); overflow-y: auto;
+  padding: var(--space-8) var(--space-6) var(--space-6); border-radius: var(--radius-container);
+  display: grid; gap: var(--space-4); justify-items: center;
+  background: var(--glass-fallback); border: 1px solid var(--glass-stroke-container); box-shadow: var(--shadow-card);
+  transform-origin: top left;
+}
+@supports (backdrop-filter: blur(1px)) {
+  .profil-pop { background: rgba(28, 28, 30, 0.55); backdrop-filter: blur(32px); }
+}
+.profil-pop.terbuka { animation: pop-buka .3s cubic-bezier(.22, .8, .3, 1) both; }
+.profil-pop.menutup { animation: pop-tutup .2s ease both; }
+.profil-avatar {
+  width: 88px; height: 88px; border-radius: 50%; display: grid; place-items: center;
+  border: 1px solid var(--glass-stroke-container); background: var(--glass-fill);
+}
+.profil-avatar .icon { width: 36px; height: 36px; }
+.profil-info { display: grid; gap: var(--space-1); text-align: center; justify-items: center; }
+.profil-info strong { font-size: 18px; }
+.profil-info span { color: var(--text-secondary); font-size: 14px; }
+.profil-menu { width: 100%; display: grid; gap: var(--space-2); }
+.pop-item {
+  display: flex; align-items: center; gap: var(--space-4); padding: 6px var(--space-3) 6px 6px;
+  border-radius: var(--radius-pill); color: #fff; text-decoration: none; font-weight: 600;
+  transition: background-color .2s, transform .15s;
+}
+.pop-item:hover, .pop-item.aktif { background: var(--glass-fill-container); }
+.pop-item:active { transform: scale(.97); }
+.pop-item:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
+.pop-ikon {
+  position: relative; width: 44px; height: 44px; border-radius: 50%; flex: none;
+  display: grid; place-items: center; border: 1px solid var(--glass-stroke); color: var(--text-secondary);
+}
+.pop-item:hover .pop-ikon, .pop-item.aktif .pop-ikon { color: #fff; }
+/* saat popup terbuka, pil sidebar tersembunyi (seolah berubah menjadi kartu) */
+.sidebar { transition: opacity .2s ease; }
+body.pop-buka .sidebar { opacity: 0; pointer-events: none; }
+@media (max-width: 1100px) {
+  .profil-pop { top: auto; bottom: 96px; left: 50%; translate: -50% 0; transform-origin: bottom center; width: min(320px, calc(100vw - 32px)); }
+}
+@keyframes pop-buka { from { opacity: 0; scale: .35; } to { opacity: 1; scale: 1; } }
+@keyframes pop-tutup { from { opacity: 1; scale: 1; } to { opacity: 0; scale: .5; } }
+
+/* ===== Carousel pertanyaan: satu baris ===== */
+.carousel { flex-wrap: nowrap; }
+.slides { display: flex; flex-wrap: nowrap; align-items: center; min-width: 0; }
+.slot {
+  flex: 0 0 auto; max-width: 100%; display: flex;
+  transition: max-width .28s ease, margin-right .28s ease, opacity .28s ease, transform .28s ease;
+}
+.slot.anim { overflow: hidden; }
+.slot.masuk, .slot.keluar { opacity: 0; transform: scale(.9); }
+.slot .chip-tanya { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
+.carousel .btn-ikon { flex: none; width: 48px; height: 48px; display: grid; place-items: center; }
+.titik span { transition: background-color .25s, transform .25s; }
+.titik span.aktif { transform: scale(1.25); }
+
+/* ===== Animasi halaman & tombol ===== */
+@keyframes halaman-masuk { from { opacity: 0; transform: translateY(12px) scale(.985); } to { opacity: 1; transform: none; } }
+@keyframes halaman-keluar { from { opacity: 1; transform: none; } to { opacity: 0; transform: translateY(-6px) scale(.985); } }
+@keyframes naik-masuk { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: none; } }
+@keyframes pop-menu { from { opacity: 0; transform: translateY(-6px) scale(.96); } to { opacity: 1; transform: none; } }
+@keyframes dialog-masuk { from { opacity: 0; transform: translateY(10px) scale(.95); } to { opacity: 1; transform: none; } }
+@keyframes latar-masuk { from { opacity: 0; } to { opacity: 1; } }
+
+.app-main, .auth-wrap { animation: halaman-masuk .5s cubic-bezier(.22, .8, .3, 1) both; }
+.cards > *, .stat-grid > *, .antrean-grid > * { animation: naik-masuk .5s cubic-bezier(.22, .8, .3, 1) both; }
+.cards > :nth-child(2), .stat-grid > :nth-child(2), .antrean-grid > :nth-child(2) { animation-delay: .07s; }
+.cards > :nth-child(3), .stat-grid > :nth-child(3) { animation-delay: .14s; }
+.cards > :nth-child(n+4), .stat-grid > :nth-child(n+4) { animation-delay: .2s; }
+body.keluar .app-main, body.keluar .auth-wrap { animation: halaman-keluar .2s ease both; }
+
+.user-menu[open] .menu { animation: pop-menu .2s cubic-bezier(.22, .8, .3, 1) both; transform-origin: top right; }
+dialog.modal[open] { animation: dialog-masuk .25s cubic-bezier(.22, .8, .3, 1) both; }
+dialog.modal[open]::backdrop { animation: latar-masuk .25s ease both; }
+.pesan { animation: naik-masuk .35s cubic-bezier(.22, .8, .3, 1) both; }
+
+.btn-primary, .btn-secondary, .btn-ghost, .btn-ikon, .chip, .nav-link, .side-item, .avatar-btn, .tab {
+  transition: transform .15s ease, background-color .2s ease, color .2s ease, border-color .2s ease, opacity .2s ease, box-shadow .2s ease;
+}
+.btn-primary:hover, .btn-secondary:hover, .btn-ghost:hover, .btn-ikon:hover, button.chip:hover, .avatar-btn:hover { transform: translateY(-1px); }
+.btn-primary:active, .btn-secondary:active, .btn-ghost:active, .btn-ikon:active, button.chip:active,
+.nav-link:active, .side-item:active, .avatar-btn:active, .tab:active { transform: scale(.95); }
+.btn-ikon:hover, button.chip:hover { background: var(--glass-fill); }
+button.chip.aktif:hover { background: #e0e0e2; }
+.btn-primary:disabled, .btn-secondary:disabled { transform: none; }
+
+@media (prefers-reduced-motion: reduce) {
+  .app-main, .auth-wrap, .cards > *, .stat-grid > *, .antrean-grid > *, .pesan,
+  .profil-pop.terbuka, .profil-pop.menutup, dialog.modal[open], dialog.modal[open]::backdrop, .user-menu[open] .menu { animation: none; }
+  .slot, .btn-primary, .btn-secondary, .btn-ghost, .btn-ikon, .chip, .nav-link, .side-item, .avatar-btn { transition: none; }
+}
+
+/* Grid/flex tidak boleh melebar mengikuti isi carousel (jika tidak, semua pertanyaan dianggap muat) */
+.asisten, .asisten > *, .pilih, .carousel { min-width: 0; }
+.pilih { grid-template-columns: minmax(0, 1fr); }

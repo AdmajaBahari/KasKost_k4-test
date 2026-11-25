@@ -7,6 +7,7 @@ async function muatPengguna(req, res, next) {
   res.locals.user = null;
   res.locals.navCfg = null;
   res.locals.notifBelumDibaca = 0;
+  res.locals.kamarUser = null;
   res.locals.path = req.path;
   try {
     const p = bacaToken(req.cookies && req.cookies.kk_token);
@@ -18,10 +19,15 @@ async function muatPengguna(req, res, next) {
         req.user = data;
         res.locals.user = data;
         res.locals.navCfg = navigasi[data.role];
-        const { count } = await supabase.from('notifikasi')
+        const hitungNotif = supabase.from('notifikasi')
           .select('id', { count: 'exact', head: true })
           .eq('user_id', data.id).eq('dibaca', false);
+        const cariKamar = data.role === 'penghuni'
+          ? supabase.from('penghuni').select('kamar:kamar_id(nama)').eq('user_id', data.id).maybeSingle()
+          : Promise.resolve({ data: null });
+        const [{ count }, { data: ph }] = await Promise.all([hitungNotif, cariKamar]);
         res.locals.notifBelumDibaca = count || 0;
+        res.locals.kamarUser = ph && ph.kamar ? ph.kamar.nama : null;
       } else {
         res.clearCookie('kk_token');
       }

@@ -1,4 +1,5 @@
 const supabase = require('../config/supabase');
+const fmt = require('../utils/format');
 
 const urut = (a, b) => String(a).localeCompare(String(b), 'id', { numeric: true });
 const NAMA_OK = /^[\p{L}\p{N} .\-]{1,30}$/u;
@@ -63,6 +64,43 @@ async function nonaktifkanPenghuni(penghuniId) {
   if (e1) throw e1;
   if (ph.kamar_id) await supabase.from('kamar').update({ status: 'kosong' }).eq('id', ph.kamar_id);
   await supabase.from('users').update({ status_akun: 'nonaktif' }).eq('id', ph.user_id);
+  return { ok: true };
+}
+
+// Penghuni nonaktif diaktifkan kembali dan ditempatkan di kamar yang masih kosong
+async function aktifkanPenghuni(penghuniId, kamarId) {
+  const { data: ph, error } = await supabase.from('penghuni')
+    .select('id, aktif, user_id').eq('id', penghuniId).maybeSingle();
+  if (error) throw error;
+  if (!ph || ph.aktif) return { ok: false };
+
+  // hanya akun yang berstatus nonaktif (bukan pendaftar yang belum disetujui)
+  const { data: user, error: eU } = await supabase.from('users')
+    .select('id, role, status_akun').eq('id', ph.user_id).maybeSingle();
+  if (eU) throw eU;
+  if (!user || user.role !== 'penghuni' || user.status_akun !== 'nonaktif') return { ok: false };
+
+  // ambil kamar tujuan hanya jika masih kosong
+  const { data: ambil, error: e1 } = await supabase.from('kamar')
+    .update({ status: 'terisi' }).eq('id', kamarId).eq('status', 'kosong').select('nama');
+  if (e1) throw e1;
+  if (!ambil || !ambil.length) return { ok: false };
+
+  const kembalikanKamar = () => supabase.from('kamar').update({ status: 'kosong' }).eq('id', kamarId);
+
+  // tanggal_masuk diperbarui supaya aturan "masuk setelah batas bayar ditagih bulan depan" tetap berlaku
+  const { error: e2 } = await supabase.from('penghuni')
+    .update({ aktif: true, kamar_id: kamarId, tanggal_masuk: fmt.hariIniWIB() }).eq('id', penghuniId);
+  if (e2) { await kembalikanKamar(); return { ok: false }; }
+
+  const { error: e3 } = await supabase.from('users').update({ status_akun: 'aktif' }).eq('id', ph.user_id);
+  if (e3) {
+    await supabase.from('penghuni').update({ aktif: false, kamar_id: null }).eq('id', penghuniId);
+    await kembalikanKamar();
+    return { ok: false };
+  }
+
+  await notif(ph.user_id, 'Akun diaktifkan kembali', `Akunmu aktif lagi dan ditempatkan di ${ambil[0].nama}.`);
   return { ok: true };
 }
 
@@ -131,6 +169,6 @@ async function aktifkanKamar(id) {
 }
 
 module.exports = {
-  daftarPenghuni, kamarKosong, pindahkan, nonaktifkanPenghuni,
+  daftarPenghuni, kamarKosong, pindahkan, nonaktifkanPenghuni, aktifkanPenghuni,
   daftarKamar, tambahKamar, ubahKamar, nonaktifkanKamar, aktifkanKamar
 };

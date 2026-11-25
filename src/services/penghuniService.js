@@ -1,4 +1,5 @@
 const supabase = require('../config/supabase');
+const fmt = require('../utils/format');
 
 // Dipakai script sekarang, dan nanti oleh halaman "Persetujuan Pendaftar" milik Pemilik.
 async function setujuiPendaftar(userId) {
@@ -21,7 +22,7 @@ async function setujuiPendaftar(userId) {
 
   // index unik "satu penghuni aktif per kamar" menolak kalau kamar sudah diambil orang lain
   const { error: ePh } = await supabase.from('penghuni')
-    .update({ aktif: true, tanggal_masuk: new Date().toISOString().slice(0, 10) })
+    .update({ aktif: true, tanggal_masuk: fmt.hariIniWIB() })
     .eq('id', ph.id);
   if (ePh) return { ok: false, pesan: 'Kamar sudah dipakai penghuni lain.' };
 

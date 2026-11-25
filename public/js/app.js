@@ -161,19 +161,115 @@
   var chat = document.getElementById('chat');
   if (!chat) return;
 
-  var slides = document.querySelectorAll('.slide');
+  // ----- Carousel satu baris: geser satu pertanyaan per klik (satu keluar, satu masuk) -----
+  var trek = document.getElementById('slides');
+  var slot = trek ? Array.prototype.slice.call(trek.querySelectorAll('.slot')) : [];
   var titik = document.querySelectorAll('.titik span');
-  var halaman = 0;
-  function tampilHalaman(n) {
-    if (!slides.length) return;
-    halaman = (n + slides.length) % slides.length;
-    slides.forEach(function (s, i) { s.hidden = i !== halaman; });
-    titik.forEach(function (t, i) { t.classList.toggle('aktif', i === halaman); });
+  var panah = document.querySelectorAll('[data-geser]');
+  var JARAK = 12, DURASI = 280;
+  var lebar = [], tampil = [], bergerak = false;
+  var kurangGerak = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  function atur(s, kelas, maks, margin) {
+    s.className = 'slot' + (kelas ? ' ' + kelas : '');
+    s.style.maxWidth = maks == null ? '' : maks;
+    s.style.marginRight = margin == null ? '' : margin;
   }
-  document.querySelectorAll('[data-geser]').forEach(function (b) {
-    b.addEventListener('click', function () { tampilHalaman(halaman + parseInt(b.getAttribute('data-geser'), 10)); });
-  });
-  tampilHalaman(0);
+  function marginUntuk(k) { return k === tampil.length - 1 ? '0px' : JARAK + 'px'; }
+  function ukur() {
+    // ukur lebar alami tiap pertanyaan (semua ditampilkan sementara)
+    slot.forEach(function (s) { atur(s, '', null, null); s.hidden = false; });
+    var W = trek.clientWidth;
+    lebar = slot.map(function (s) { return Math.min(s.offsetWidth, W); });
+  }
+  function gambar(mulai) {
+    var n = slot.length, W = trek.clientWidth, pakai = 0;
+    tampil = [];
+    for (var k = 0; k < n; k++) {
+      var i = (mulai + k) % n, perlu = lebar[i] + (tampil.length ? JARAK : 0);
+      if (tampil.length && pakai + perlu > W) break;
+      pakai += perlu; tampil.push(i);
+    }
+    slot.forEach(function (s) { atur(s, '', null, null); s.hidden = true; });
+    tampil.forEach(function (i, k) { slot[i].hidden = false; slot[i].style.marginRight = marginUntuk(k); trek.appendChild(slot[i]); });
+    penanda();
+  }
+  function penanda() {
+    var semua = tampil.length >= slot.length;
+    panah.forEach(function (b) { b.hidden = semua; });
+    titik.forEach(function (t, i) { t.classList.toggle('aktif', tampil.indexOf(i) !== -1); t.hidden = semua; });
+  }
+  function selesai(baru) {
+    baru.forEach(function (s) { atur(s, '', null, null); });
+    tampil.forEach(function (i, k) { slot[i].style.marginRight = marginUntuk(k); });
+    bergerak = false;
+    panah.forEach(function (b) { b.disabled = false; });
+  }
+
+  function geser(arah) {
+    if (bergerak || tampil.length >= slot.length) return;
+    bergerak = true;
+    panah.forEach(function (b) { b.disabled = true; });
+
+    var n = slot.length;
+    var keluarIdx = arah > 0 ? tampil[0] : tampil[tampil.length - 1];
+    var elKeluar = slot[keluarIdx];
+
+    function tahapMasuk() {
+      elKeluar.hidden = true; atur(elKeluar, '', null, null);
+
+      var sisa = tampil.filter(function (i) { return i !== keluarIdx; });
+      var pakai = sisa.reduce(function (t, i, k) { return t + lebar[i] + (k ? JARAK : 0); }, 0);
+      var W = trek.clientWidth, masuk = [];
+      var ujung = sisa.length ? (arah > 0 ? sisa[sisa.length - 1] : sisa[0]) : keluarIdx;
+      var kandidat = arah > 0 ? (ujung + 1) % n : (ujung - 1 + n) % n;
+      // tambah pertanyaan baru di sisi seberang selama masih muat satu baris
+      while (kandidat !== keluarIdx && sisa.length + masuk.length < n - 1) {
+        var ada = sisa.length + masuk.length;
+        var perlu = lebar[kandidat] + (ada ? JARAK : 0);
+        if (ada && pakai + perlu > W) break;
+        pakai += perlu; masuk.push(kandidat);
+        kandidat = arah > 0 ? (kandidat + 1) % n : (kandidat - 1 + n) % n;
+      }
+      tampil = arah > 0 ? sisa.concat(masuk) : masuk.slice().reverse().concat(sisa);
+
+      var baru = masuk.map(function (i) {
+        var s = slot[i];
+        atur(s, 'anim masuk', '0px', '0px');
+        s.hidden = false;
+        if (arah > 0) trek.appendChild(s); else trek.insertBefore(s, trek.firstElementChild);
+        return s;
+      });
+      // slot yang sudah ada menyesuaikan jarak (ikut bertransisi)
+      tampil.forEach(function (i, k) { if (baru.indexOf(slot[i]) === -1) slot[i].style.marginRight = marginUntuk(k); });
+      void trek.offsetWidth; // paksa reflow supaya transisi berjalan
+      baru.forEach(function (s) {
+        var i = slot.indexOf(s);
+        atur(s, 'anim', lebar[i] + 'px', marginUntuk(tampil.indexOf(i)));
+      });
+      penanda();
+      setTimeout(function () { selesai(baru); }, kurangGerak ? 0 : DURASI + 20);
+    }
+
+    if (kurangGerak) { tahapMasuk(); return; }
+    // tahap 1: satu pertanyaan memudar dan menyusut
+    atur(elKeluar, 'anim', elKeluar.offsetWidth + 'px', elKeluar.style.marginRight);
+    void elKeluar.offsetWidth;
+    atur(elKeluar, 'anim keluar', '0px', '0px');
+    setTimeout(tahapMasuk, DURASI);
+  }
+
+  if (trek && slot.length) {
+    ukur(); gambar(0);
+    panah.forEach(function (b) {
+      b.addEventListener('click', function () { geser(parseInt(b.getAttribute('data-geser'), 10)); });
+    });
+    var tunda = null;
+    window.addEventListener('resize', function () {
+      clearTimeout(tunda);
+      tunda = setTimeout(function () { if (!bergerak) { var a = tampil[0] || 0; ukur(); gambar(a); } }, 150);
+    });
+  }
 
   function el(tag, kelas, teks) {
     var e = document.createElement(tag);
@@ -283,4 +379,41 @@
     document.getElementById('alasan-denda').textContent = form.elements['alasan'].value.trim();
     if (typeof dlg.showModal === 'function') dlg.showModal();
   });
+})();
+// Popup profil: ikon profil di sidebar membuka kartu berisi profil dan pintasan
+(function () {
+  var toggle = document.getElementById('profil-toggle');
+  var pop = document.getElementById('profil-pop');
+  if (!toggle || !pop) return;
+  var terbuka = false, timer = null;
+
+  function buka() {
+    clearTimeout(timer);
+    pop.hidden = false;
+    pop.classList.remove('menutup');
+    void pop.offsetWidth;
+    pop.classList.add('terbuka');
+    document.body.classList.add('pop-buka');
+    toggle.setAttribute('aria-expanded', 'true');
+    terbuka = true;
+    var pertama = pop.querySelector('a');
+    if (pertama) pertama.focus({ preventScroll: true });
+  }
+  function tutup(kembaliFokus) {
+    if (!terbuka) return;
+    terbuka = false;
+    pop.classList.remove('terbuka');
+    pop.classList.add('menutup');
+    document.body.classList.remove('pop-buka');
+    toggle.setAttribute('aria-expanded', 'false');
+    timer = setTimeout(function () { pop.hidden = true; pop.classList.remove('menutup'); }, 200);
+    if (kembaliFokus) toggle.focus({ preventScroll: true });
+  }
+
+  // tanpa JavaScript, ikon tetap menjadi tautan ke halaman pengaturan
+  toggle.addEventListener('click', function (e) { e.preventDefault(); if (terbuka) tutup(true); else buka(); });
+  document.addEventListener('click', function (e) {
+    if (terbuka && !pop.contains(e.target) && !toggle.contains(e.target)) tutup(false);
+  });
+  document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && terbuka) tutup(true); });
 })();
