@@ -50,7 +50,7 @@
     var f = input.files && input.files[0];
     if (!f) return reset();
     if (TIPE.indexOf(f.type) === -1) return reset('Format foto harus JPG, PNG, atau WebP.');
-    if (f.size > 5 * 1024 * 1024) return reset('Ukuran foto maksimal 5 MB.');
+    if (f.size > 4 * 1024 * 1024) return reset('Ukuran foto maksimal 4 MB.');
     if (url) URL.revokeObjectURL(url);
     url = URL.createObjectURL(f);
     img.src = url;

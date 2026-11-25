@@ -73,8 +73,14 @@ app.use((err, req, res, next) => {
 const jalankanJob = () => require('./services/tagihanService').jalankanJob()
   .catch((e) => console.error('[JOB] gagal:', e.message));
 
-app.listen(PORT, () => {
-  console.log(`KasKost berjalan di http://localhost:${PORT}${PROD ? ' (production)' : ''}`);
-  setTimeout(jalankanJob, 3000);
-  setInterval(jalankanJob, 60 * 60 * 1000).unref();
-});
+// Di Vercel, app diekspor dan dijalankan sebagai fungsi serverless (tanpa listen dan tanpa timer).
+// Di laptop atau server biasa (node src/app.js), app berjalan seperti semula.
+if (require.main === module) {
+  app.listen(PORT, () => {
+    console.log(`KasKost berjalan di http://localhost:${PORT}${PROD ? ' (production)' : ''}`);
+    setTimeout(jalankanJob, 3000);
+    setInterval(jalankanJob, 60 * 60 * 1000).unref();
+  });
+}
+
+module.exports = app;
