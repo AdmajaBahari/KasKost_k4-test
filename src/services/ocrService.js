@@ -1,8 +1,20 @@
 require('dotenv').config();
 
-const MODEL = process.env.GEMINI_MODEL || 'gemini-3.8-flash';
 const KUNCI = process.env.GEMINI_API_KEY;
-const URL_API = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(MODEL)}:generateContent`;
+const MODEL_UTAMA = process.env.GEMINI_MODEL || 'gemini-3.8-flash';
+
+// Model utama dicoba dulu; kalau sibuk atau tidak ditemukan, lanjut ke cadangan (maksimal 3 model)
+const DAFTAR_MODEL = [MODEL_UTAMA, 'gemini-3.8-flash', 'gemini-3.7-flash', 'gemini-3.6-flash']
+  .filter((m, i, a) => a.indexOf(m) === i)
+  .slice(0, 3);
+
+const urlModel = (m) =>
+  `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(m)}:generateContent`;
+
+// Status yang layak dicoba ulang dengan model lain
+const BISA_DIULANG = [404, 429, 500, 502, 503, 504];
+// 3 model x 30 detik = maksimal 90 detik, masih di bawah jendela 120 detik di buktiService
+const BATAS_WAKTU_MS = 30000;
 
 class OcrError extends Error {}
 
@@ -28,45 +40,60 @@ const PROMPT = [
 
 const batas = (n, min, max) => Math.min(Math.max(n, min), max);
 
+const PESAN_UMUM = 'Layanan pembacaan sedang bermasalah. Coba lagi nanti. Percobaanmu tidak berkurang.';
+const PESAN_SIBUK = 'Layanan pembacaan sedang sibuk. Coba lagi sebentar lagi. Percobaanmu tidak berkurang.';
+const PESAN_KONEKSI = 'Tidak dapat terhubung ke layanan pembacaan. Coba lagi. Percobaanmu tidak berkurang.';
+
+// Mengirim permintaan; mencoba model cadangan kalau model sebelumnya sibuk atau tidak tersedia
+async function kirim(body) {
+  let statusTerakhir = 0;
+
+  for (const m of DAFTAR_MODEL) {
+    const kontrol = new AbortController();
+    const timer = setTimeout(() => kontrol.abort(), BATAS_WAKTU_MS);
+    try {
+      const res = await fetch(urlModel(m), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-goog-api-key': KUNCI },
+        signal: kontrol.signal,
+        body
+      });
+      if (res.ok) return res;
+
+      const teks = await res.text().catch(() => '');
+      console.error('[OCR] model', m, 'HTTP', res.status, teks.slice(0, 200));
+      statusTerakhir = res.status;
+      // Kesalahan seperti 400/401/403 tidak akan membaik dengan ganti model
+      if (!BISA_DIULANG.includes(res.status)) throw new OcrError(PESAN_UMUM);
+    } catch (e) {
+      if (e instanceof OcrError) throw e;
+      console.error('[OCR] model', m, 'gagal tersambung:', e.name);
+      statusTerakhir = 0;
+    } finally {
+      clearTimeout(timer);
+    }
+  }
+
+  if (statusTerakhir === 0) throw new OcrError(PESAN_KONEKSI);
+  throw new OcrError(statusTerakhir === 429 || statusTerakhir === 503 ? PESAN_SIBUK : PESAN_UMUM);
+}
+
 async function bacaBukti(buffer, mimeType) {
   if (!KUNCI) {
     console.error('[OCR] GEMINI_API_KEY belum diisi di .env');
     throw new OcrError('Layanan pembacaan bukti belum siap. Hubungi pengelola.');
   }
 
-  const kontrol = new AbortController();
-  const timer = setTimeout(() => kontrol.abort(), 60000);
-  let res;
-  try {
-    res = await fetch(URL_API, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'x-goog-api-key': KUNCI },
-      signal: kontrol.signal,
-      body: JSON.stringify({
-        contents: [{
-          role: 'user',
-          parts: [
-            { text: PROMPT },
-            { inline_data: { mime_type: mimeType, data: buffer.toString('base64') } }
-          ]
-        }],
-        generationConfig: { responseMimeType: 'application/json', responseSchema: SKEMA }
-      })
-    });
-  } catch (e) {
-    console.error('[OCR] gagal tersambung:', e.name);
-    throw new OcrError('Tidak dapat terhubung ke layanan pembacaan. Coba lagi. Percobaanmu tidak berkurang.');
-  } finally {
-    clearTimeout(timer);
-  }
-
-  if (!res.ok) {
-    const teks = await res.text().catch(() => '');
-    console.error('[OCR] HTTP', res.status, teks.slice(0, 300));
-    throw new OcrError(res.status === 429
-      ? 'Layanan pembacaan sedang sibuk. Coba lagi sebentar lagi. Percobaanmu tidak berkurang.'
-      : 'Layanan pembacaan sedang bermasalah. Coba lagi nanti. Percobaanmu tidak berkurang.');
-  }
+  const res = await kirim(JSON.stringify({
+    contents: [{
+      role: 'user',
+      parts: [
+        { text: PROMPT },
+        { inline_data: { mime_type: mimeType, data: buffer.toString('base64') } }
+      ]
+    }],
+    generationConfig: { responseMimeType: 'application/json', responseSchema: SKEMA }
+  }));
 
   let o;
   try {

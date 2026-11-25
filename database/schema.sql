@@ -179,3 +179,7 @@ alter table bukti_pembayaran add column if not exists nama_pengirim text;
 
 -- Migrasi 003: versi sesi (dicabut saat password diganti)
 alter table users add column if not exists token_versi int not null default 0;
+
+-- Migrasi 004: jejak item tagihan (denda manual)
+alter table tagihan_item add column if not exists created_at timestamptz not null default now();
+alter table tagihan_item add column if not exists dicatat_oleh uuid references users(id);

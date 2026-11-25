@@ -1,6 +1,7 @@
 const express = require('express');
 const c = require('../controllers/pengelolaController');
 const k = require('../controllers/kosController');
+const dn = require('../controllers/dendaController');
 const tangkap = require('../utils/tangkap');
 const { wajibLogin } = require('../middleware/auth');
 
@@ -20,7 +21,9 @@ router.get('/pemilik', pemilik, tangkap(c.berandaPemilik));
 });
 router.get('/pemilik/tagihan/semua', pemilik, tangkap(k.semuaTagihan));
 router.get('/pemilik/tagihan/bukti/:id', pemilik, tangkap(k.lihatBukti));
-router.get('/pemilik/tagihan/denda', pemilik, segera('Beri Denda Manual'));
+router.get('/pemilik/tagihan/denda', pemilik, tangkap(dn.halaman));
+router.post('/pemilik/tagihan/denda', pemilik, tangkap(dn.simpan));
+router.post('/pemilik/tagihan/denda/:id/batal', pemilik, tangkap(dn.batal));
 
 // Kos
 router.get('/pemilik/kos', pemilik, (req, res) => res.redirect('/pemilik/kos/pendaftar'));
@@ -30,6 +33,7 @@ router.post('/pemilik/kos/pendaftar/:id/tolak', pemilik, tangkap(c.tolakPendafta
 router.get('/pemilik/kos/penghuni', pemilik, tangkap(k.penghuni));
 router.post('/pemilik/kos/penghuni/:id/pindah', pemilik, tangkap(k.pindah));
 router.post('/pemilik/kos/penghuni/:id/nonaktifkan', pemilik, tangkap(k.nonaktifkanPenghuni));
+router.post('/pemilik/kos/penghuni/:id/aktifkan', pemilik, tangkap(k.aktifkanPenghuni));
 router.get('/pemilik/kos/kamar', pemilik, tangkap(k.kamar));
 router.post('/pemilik/kos/kamar/tambah', pemilik, tangkap(k.tambahKamar));
 router.post('/pemilik/kos/kamar/:id/ubah', pemilik, tangkap(k.ubahKamar));

@@ -7,6 +7,7 @@
 
 <% if (info === 'dipindah') { %><p class="notice alert-lebar">Penempatan diubah. Kamar lama kini Kosong.</p><% } %>
 <% if (info === 'dinonaktifkan') { %><p class="notice alert-lebar">Akun penghuni dinonaktifkan dan kamarnya kini Kosong.</p><% } %>
+<% if (info === 'diaktifkan') { %><p class="notice alert-lebar">Akun penghuni diaktifkan kembali.</p><% } %>
 <% if (info === 'gagal') { %>
 <div class="alert alert-lebar" role="alert"><%- include('../../partials/icon', { nama: 'alert' }) %><strong>Gagal memproses. Kamar tujuan mungkin sudah terisi atau penghuni sudah nonaktif.</strong></div>
 <% } %>
@@ -40,7 +41,7 @@
               <button class="btn-secondary btn-kecil" type="button" data-dialog="dlg-pindah" data-aksi="/pemilik/kos/penghuni/<%= p.id %>/pindah" data-ringkas="<%= p.nama !== '-' ? p.nama : p.email %> · <%= p.kamar || '-' %>">Ubah Penempatan</button>
               <button class="btn-secondary btn-kecil" type="button" data-dialog="dlg-nonaktif" data-aksi="/pemilik/kos/penghuni/<%= p.id %>/nonaktifkan" data-ringkas="<%= p.nama !== '-' ? p.nama : p.email %> · <%= p.kamar || '-' %>">Nonaktifkan</button>
             </div>
-            <% } else { %><span class="text-secondary">-</span><% } %>
+            <% } else { %><button class="btn-secondary btn-kecil" type="button" data-dialog="dlg-aktif" data-aksi="/pemilik/kos/penghuni/<%= p.id %>/aktifkan" data-ringkas="<%= p.nama !== '-' ? p.nama : p.email %>">Aktifkan Kembali</button><% } %>
           </td>
         </tr>
         <% }) %>
@@ -72,6 +73,26 @@
   </form>
 </dialog>
 
+<dialog class="modal" id="dlg-aktif" aria-labelledby="jdl-aktif">
+  <div class="row"><h2 id="jdl-aktif">Aktifkan kembali akun ini?</h2><button type="button" class="btn-ikon" data-tutup aria-label="Tutup">&times;</button></div>
+  <p><strong data-ringkas></strong></p>
+  <form method="post" action="#" class="auth-form">
+    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+    <div class="field">
+      <label for="kamar-aktif">Kamar</label>
+      <select class="input" id="kamar-aktif" name="kamar_id" required>
+        <option value="">Pilih kamar</option>
+        <% kosong.forEach(function (k) { %><option value="<%= k.id %>"><%= k.nama %> (Kosong)</option><% }) %>
+      </select>
+      <% if (!kosong.length) { %><p class="hint">Belum ada kamar kosong.</p><% } %>
+    </div>
+    <div class="notice-box"><%- include('../../partials/icon', { nama: 'alert' }) %><div><p class="text-secondary">Penghuni dapat masuk lagi dan menerima tagihan baru. Tagihan lama yang belum lunas tetap tercatat.</p></div></div>
+    <div class="aksi-baris">
+      <button type="button" class="btn-secondary" data-tutup>Batal</button>
+      <button type="submit" class="btn-primary" <%= kosong.length ? '' : 'disabled' %>>Ya, Aktifkan</button>
+    </div>
+  </form>
+</dialog>
 <dialog class="modal" id="dlg-nonaktif" aria-labelledby="jdl-nonaktif">
   <div class="row"><h2 id="jdl-nonaktif">Nonaktifkan akun ini?</h2><button type="button" class="btn-ikon" data-tutup aria-label="Tutup">&times;</button></div>
   <p><strong data-ringkas></strong></p>

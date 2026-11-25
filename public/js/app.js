@@ -269,3 +269,18 @@
     });
   });
 })();
+// Beri denda manual: konfirmasi sebelum simpan
+(function () {
+  var form = document.getElementById('form-denda');
+  if (!form) return;
+  var dlg = document.getElementById('dlg-denda');
+  form.querySelector('[data-konfirmasi-denda]').addEventListener('click', function () {
+    if (!form.reportValidity()) return;
+    var sel = form.elements['penghuni_id'];
+    var angka = form.elements['nominal'].value.replace(/\D/g, '');
+    var rupiah = 'Rp ' + angka.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+    document.getElementById('ringkas-denda').textContent = sel.options[sel.selectedIndex].text + ' · ' + rupiah;
+    document.getElementById('alasan-denda').textContent = form.elements['alasan'].value.trim();
+    if (typeof dlg.showModal === 'function') dlg.showModal();
+  });
+})();

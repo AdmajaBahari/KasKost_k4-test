@@ -1,0 +1,121 @@
+<% const err = (f) => (error && error.field === f) ? error.pesan : null; %>
+<h1 class="page-h1">Tagihan</h1>
+<%- include('../../partials/tabs', { tabs: [
+  { label: 'Semua Tagihan', href: '/pemilik/tagihan/semua' },
+  { label: 'Antrean Verifikasi', href: '/pemilik/tagihan/antrean' },
+  { label: 'Beri Denda Manual', href: '/pemilik/tagihan/denda', aktif: true }
+] }) %>
+
+<% if (info === 'ditambah') { %><p class="notice alert-lebar">Denda berhasil ditambahkan. Penghuni sudah diberi tahu.</p><% } %>
+<% if (info === 'dibatalkan') { %><p class="notice alert-lebar">Denda manual dibatalkan dan penghuni sudah diberi tahu.</p><% } %>
+<% if (info === 'gagal') { %>
+<div class="alert alert-lebar" role="alert"><%- include('../../partials/icon', { nama: 'alert' }) %><strong>Gagal memproses. Denda mungkin sudah dibayar, sedang diperiksa, atau sudah dibatalkan.</strong></div>
+<% } %>
+
+<div class="two-col">
+  <section class="glass-card">
+    <div class="row">
+      <h2>Beri Denda Manual</h2>
+      <span class="text-secondary small">* wajib diisi</span>
+    </div>
+
+    <form id="form-denda" method="post" action="/pemilik/tagihan/denda" class="auth-form" novalidate>
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+
+      <div class="field">
+        <label for="penghuni_id">Penghuni *</label>
+        <select class="input <%= err('penghuni') ? 'is-error' : '' %>" id="penghuni_id" name="penghuni_id" required>
+          <option value="">Pilih penghuni</option>
+          <% pil.penghuni.forEach(function (p) { %>
+          <option value="<%= p.id %>" <%= form.penghuni_id === p.id ? 'selected' : '' %>><%= p.label %></option>
+          <% }) %>
+        </select>
+        <% if (err('penghuni')) { %><p class="error" role="alert"><%= err('penghuni') %></p><% } %>
+      </div>
+
+      <div class="field">
+        <label for="periode">Periode *</label>
+        <select class="input <%= err('periode') ? 'is-error' : '' %>" id="periode" name="periode" required>
+          <% pil.periode.forEach(function (p) { %>
+          <option value="<%= p.nilai %>" <%= form.periode === p.nilai ? 'selected' : '' %>><%= p.label %></option>
+          <% }) %>
+        </select>
+        <% if (err('periode')) { %><p class="error" role="alert"><%= err('periode') %></p><% } %>
+      </div>
+
+      <div class="field">
+        <label for="alasan">Alasan *</label>
+        <input class="input <%= err('alasan') ? 'is-error' : '' %>" id="alasan" type="text" name="alasan" maxlength="80" placeholder="Contoh: kerusakan lemari" value="<%= form.alasan || '' %>" required>
+        <% if (err('alasan')) { %><p class="error" role="alert"><%= err('alasan') %></p><% } %>
+      </div>
+
+      <div class="field">
+        <label for="nominal">Nominal *</label>
+        <div class="input-prefix">
+          <span class="awalan" aria-hidden="true">Rp</span>
+          <input class="input <%= err('nominal') ? 'is-error' : '' %>" id="nominal" type="text" name="nominal" inputmode="numeric" placeholder="50.000" value="<%= form.nominal || '' %>" autocomplete="off" required>
+        </div>
+        <% if (err('nominal')) { %><p class="error" role="alert"><%= err('nominal') %></p><% } %>
+      </div>
+
+      <p class="hint">Denda masuk ke tagihan Denda penghuni dan dibayar ke rekening Pemilik.</p>
+
+      <div class="aksi-baris">
+        <a class="btn-secondary" href="/pemilik/tagihan/semua">Batal</a>
+        <button class="btn-primary" type="button" data-konfirmasi-denda>Simpan</button>
+        <noscript><button class="btn-primary" type="submit">Simpan</button></noscript>
+      </div>
+    </form>
+  </section>
+
+  <section class="glass-card">
+    <h2>Denda Manual Terakhir</h2>
+    <% if (!terakhir.length) { %>
+    <p class="text-secondary">Belum ada denda manual.</p>
+    <% } else { %>
+    <div class="tabel-scroll">
+      <table class="tabel">
+        <thead><tr><th>Tanggal</th><th>Kamar</th><th>Alasan</th><th>Nominal</th><th>Status</th><th>Aksi</th></tr></thead>
+        <tbody>
+          <% terakhir.forEach(function (t) { %>
+          <tr>
+            <td><%= fmt.tanggalDM(t.tanggal) %></td>
+            <td><%= t.kamar %></td>
+            <td><%= t.alasan %></td>
+            <td><%= fmt.rupiah(t.nominal) %></td>
+            <td><%- include('../../partials/badge', { status: t.status }) %></td>
+            <td>
+              <% if (t.bisaBatal) { %>
+              <button class="btn-secondary btn-kecil" type="button" data-dialog="dlg-batal" data-aksi="/pemilik/tagihan/denda/<%= t.id %>/batal" data-ringkas="<%= t.kamar %> · <%= t.alasan %> · <%= fmt.rupiah(t.nominal) %>">Batalkan</button>
+              <% } else { %><span class="text-secondary">-</span><% } %>
+            </td>
+          </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    </div>
+    <% } %>
+  </section>
+</div>
+
+<dialog class="modal" id="dlg-denda" aria-labelledby="jdl-denda">
+  <div class="row"><h2 id="jdl-denda">Beri denda ini?</h2><button type="button" class="btn-ikon" data-tutup aria-label="Tutup">&times;</button></div>
+  <p><strong id="ringkas-denda"></strong></p>
+  <p class="text-secondary small" id="alasan-denda"></p>
+  <div class="notice-box"><%- include('../../partials/icon', { nama: 'alert' }) %><div><p class="text-secondary">Penghuni akan menerima notifikasi. Denda dapat dibatalkan selama belum dibayar atau diperiksa.</p></div></div>
+  <div class="aksi-baris">
+    <button type="button" class="btn-secondary" data-tutup>Batal</button>
+    <button type="submit" form="form-denda" class="btn-primary">Ya, Beri Denda</button>
+  </div>
+</dialog>
+
+<dialog class="modal" id="dlg-batal" aria-labelledby="jdl-batal">
+  <div class="row"><h2 id="jdl-batal">Batalkan denda ini?</h2><button type="button" class="btn-ikon" data-tutup aria-label="Tutup">&times;</button></div>
+  <p><strong data-ringkas></strong></p>
+  <div class="notice-box"><%- include('../../partials/icon', { nama: 'alert' }) %><div><p class="text-secondary">Denda dihapus dari tagihan penghuni dan penghuni akan menerima notifikasi.</p></div></div>
+  <form method="post" action="#" class="aksi-baris">
+    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+    <button type="button" class="btn-secondary" data-tutup>Tidak</button>
+    <button type="submit" class="btn-primary">Ya, Batalkan</button>
+  </form>
+</dialog>

@@ -1,8 +1,19 @@
 require('dotenv').config();
 
-const MODEL = process.env.GEMINI_MODEL || 'gemini-3.8-flash';
 const KUNCI = process.env.GEMINI_API_KEY;
-const URL_API = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(MODEL)}:generateContent`;
+const MODEL_UTAMA = process.env.GEMINI_MODEL || 'gemini-3.8-flash';
+
+// Model utama dicoba dulu; kalau sibuk atau tidak ditemukan, lanjut ke cadangan (maksimal 3 model)
+const DAFTAR_MODEL = [MODEL_UTAMA, 'gemini-3.8-flash', 'gemini-3.7-flash', 'gemini-3.6-flash']
+  .filter((m, i, a) => a.indexOf(m) === i)
+  .slice(0, 3);
+
+const urlModel = (m) =>
+  `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(m)}:generateContent`;
+
+// Status yang layak dicoba ulang dengan model lain
+const BISA_DIULANG = [404, 429, 500, 502, 503, 504];
+const BATAS_WAKTU_MS = 20000; // per model
 
 class AsistenError extends Error {}
 
@@ -27,6 +38,39 @@ function angkaAman(teks, sumber) {
   return angka.every((a) => sumber.includes(a.replace(/\.$/, '')));
 }
 
+// Mengirim permintaan; mencoba model cadangan kalau model sebelumnya sibuk atau tidak tersedia
+async function kirim(body) {
+  let statusTerakhir = 0;
+
+  for (const m of DAFTAR_MODEL) {
+    const kontrol = new AbortController();
+    const timer = setTimeout(() => kontrol.abort(), BATAS_WAKTU_MS);
+    try {
+      const res = await fetch(urlModel(m), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-goog-api-key': KUNCI },
+        signal: kontrol.signal,
+        body
+      });
+      if (res.ok) return res;
+
+      const isi = await res.text().catch(() => '');
+      console.error('[ASISTEN] model', m, 'HTTP', res.status, isi.slice(0, 200));
+      statusTerakhir = res.status;
+      // Kesalahan seperti 400/401/403 tidak akan membaik dengan ganti model
+      if (!BISA_DIULANG.includes(res.status)) throw new AsistenError('http ' + res.status);
+    } catch (e) {
+      if (e instanceof AsistenError) throw e;
+      console.error('[ASISTEN] model', m, 'gagal tersambung:', e.name);
+      statusTerakhir = 0;
+    } finally {
+      clearTimeout(timer);
+    }
+  }
+
+  throw new AsistenError(statusTerakhir ? 'http ' + statusTerakhir : 'koneksi');
+}
+
 async function catatan(fakta) {
   if (!KUNCI) {
     console.error('[ASISTEN] GEMINI_API_KEY belum diisi di .env');
@@ -34,32 +78,11 @@ async function catatan(fakta) {
   }
   const teksFakta = JSON.stringify(fakta);
 
-  const kontrol = new AbortController();
-  const timer = setTimeout(() => kontrol.abort(), 30000);
-  let res;
-  try {
-    res = await fetch(URL_API, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'x-goog-api-key': KUNCI },
-      signal: kontrol.signal,
-      body: JSON.stringify({
-        system_instruction: { parts: [{ text: PETUNJUK }] },
-        contents: [{ role: 'user', parts: [{ text: 'FAKTA:\n' + teksFakta }] }],
-        generationConfig: { responseMimeType: 'application/json', responseSchema: SKEMA }
-      })
-    });
-  } catch (e) {
-    console.error('[ASISTEN] gagal tersambung:', e.name);
-    throw new AsistenError('koneksi');
-  } finally {
-    clearTimeout(timer);
-  }
-
-  if (!res.ok) {
-    const isi = await res.text().catch(() => '');
-    console.error('[ASISTEN] HTTP', res.status, isi.slice(0, 300));
-    throw new AsistenError('http ' + res.status);
-  }
+  const res = await kirim(JSON.stringify({
+    system_instruction: { parts: [{ text: PETUNJUK }] },
+    contents: [{ role: 'user', parts: [{ text: 'FAKTA:\n' + teksFakta }] }],
+    generationConfig: { responseMimeType: 'application/json', responseSchema: SKEMA }
+  }));
 
   let teks;
   try {
