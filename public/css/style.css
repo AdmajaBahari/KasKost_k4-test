@@ -528,3 +528,43 @@ button.chip.aktif:hover { background: #e0e0e2; }
 /* Grid/flex tidak boleh melebar mengikuti isi carousel (jika tidak, semua pertanyaan dianggap muat) */
 .asisten, .asisten > *, .pilih, .carousel { min-width: 0; }
 .pilih { grid-template-columns: minmax(0, 1fr); }
+
+/* ===== Perbaikan UI: tombol kembali, hapus, carousel asisten ===== */
+.back {
+  display: inline-flex; align-items: center; gap: var(--space-2);
+  height: 44px; padding: 0 var(--space-6); margin-bottom: var(--space-6);
+  border-radius: var(--radius-pill); border: 1px solid var(--glass-stroke);
+  background: var(--glass-fallback); color: #fff;
+  font-size: 14px; font-weight: 600; text-decoration: none;
+}
+@supports (backdrop-filter: blur(1px)) { .back { background: var(--glass-fill); backdrop-filter: blur(20px); } }
+.back::before { content: "\2039"; font-size: 22px; line-height: 1; margin-top: -2px; }
+.back:hover { background: var(--glass-fill-container); }
+.back:focus-visible { outline: 2px solid #fff; outline-offset: 3px; }
+
+.btn-bahaya { border-color: var(--danger); color: #ffb4b4; }
+.btn-bahaya:hover { background: rgba(255, 107, 107, 0.12); }
+.btn-bahaya-isi { background: var(--danger); color: #111; }
+.btn-bahaya-isi:hover { background: #ff8585; }
+.notice-bahaya { border-color: var(--danger); }
+
+.pilih-tanya { display: grid; gap: var(--space-3); }
+.rel { display: flex; align-items: center; gap: var(--space-3); --tampil: 3; }
+.rel-jendela { flex: 1; min-width: 0; overflow: hidden; padding: 4px 2px; }
+.rel-jalur { display: flex; gap: var(--space-3); transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1); will-change: transform; }
+.rel-item {
+  flex: 0 0 calc((100% - (var(--tampil) - 1) * 12px) / var(--tampil));
+  min-height: 56px; height: auto; padding: var(--space-2) var(--space-4);
+  display: flex; align-items: center; justify-content: center;
+  text-align: center; white-space: normal; line-height: 1.3;
+}
+.rel-panah { flex: none; }
+.rel-panah:disabled { opacity: 0.35; cursor: default; }
+.rel-titik { display: flex; gap: 6px; justify-content: center; min-height: 8px; }
+.rel-titik button {
+  width: 8px; height: 8px; padding: 0; border: 0; border-radius: 50%; cursor: pointer;
+  background: var(--glass-stroke); transition: width 0.25s ease, background 0.25s ease;
+}
+.rel-titik button[aria-current="true"] { width: 22px; border-radius: var(--radius-pill); background: #fff; }
+@media (max-width: 640px) { .rel { --tampil: 1; } }
+@media (prefers-reduced-motion: reduce) { .rel-jalur { transition: none; } .rel-titik button { transition: none; } }

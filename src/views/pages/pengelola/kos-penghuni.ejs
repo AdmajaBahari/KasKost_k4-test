@@ -8,8 +8,12 @@
 <% if (info === 'dipindah') { %><p class="notice alert-lebar">Penempatan diubah. Kamar lama kini Kosong.</p><% } %>
 <% if (info === 'dinonaktifkan') { %><p class="notice alert-lebar">Akun penghuni dinonaktifkan dan kamarnya kini Kosong.</p><% } %>
 <% if (info === 'diaktifkan') { %><p class="notice alert-lebar">Akun penghuni diaktifkan kembali.</p><% } %>
+<% if (info === 'dihapus') { %><p class="notice alert-lebar">Penghuni dihapus permanen.</p><% } %>
+<% if (info === 'ada_pembayaran') { %>
+<div class="alert alert-lebar" role="alert"><%- include('../../partials/icon', { nama: 'alert' }) %><strong>Penghuni ini punya pembayaran yang sudah tercatat di kas, jadi tidak bisa dihapus permanen. Gunakan Nonaktifkan.</strong></div>
+<% } %>
 <% if (info === 'gagal') { %>
-<div class="alert alert-lebar" role="alert"><%- include('../../partials/icon', { nama: 'alert' }) %><strong>Gagal memproses. Kamar tujuan mungkin sudah terisi atau penghuni sudah nonaktif.</strong></div>
+<div class="alert alert-lebar" role="alert"><%- include('../../partials/icon', { nama: 'alert' }) %><strong>Gagal memproses. Kamar tujuan mungkin sudah terisi atau penghuni sudah berubah status.</strong></div>
 <% } %>
 
 <div class="toolbar">
@@ -30,18 +34,22 @@
       <thead><tr><th>Kamar</th><th>Nama</th><th>Email</th><th>Status Akun</th><th>Aksi</th></tr></thead>
       <tbody>
         <% daftar.forEach(function (p) { %>
+        <% const ringkas = (p.nama !== '-' ? p.nama : p.email) + ' · ' + (p.kamar || '-'); %>
         <tr data-cari-baris="<%= ((p.kamar || '') + ' ' + p.nama + ' ' + p.email).toLowerCase() %>">
           <td><strong><%= p.kamar || '-' %></strong></td>
           <td><%= p.nama %></td>
           <td><%= p.email %></td>
           <td><span class="pill"><%= p.status === 'aktif' ? 'Aktif' : 'Nonaktif' %></span></td>
           <td>
-            <% if (p.status === 'aktif') { %>
             <div class="aksi-baris">
-              <button class="btn-secondary btn-kecil" type="button" data-dialog="dlg-pindah" data-aksi="/pemilik/kos/penghuni/<%= p.id %>/pindah" data-ringkas="<%= p.nama !== '-' ? p.nama : p.email %> · <%= p.kamar || '-' %>">Ubah Penempatan</button>
-              <button class="btn-secondary btn-kecil" type="button" data-dialog="dlg-nonaktif" data-aksi="/pemilik/kos/penghuni/<%= p.id %>/nonaktifkan" data-ringkas="<%= p.nama !== '-' ? p.nama : p.email %> · <%= p.kamar || '-' %>">Nonaktifkan</button>
+              <% if (p.status === 'aktif') { %>
+              <button class="btn-secondary btn-kecil" type="button" data-dialog="dlg-pindah" data-aksi="/pemilik/kos/penghuni/<%= p.id %>/pindah" data-ringkas="<%= ringkas %>">Ubah Penempatan</button>
+              <button class="btn-secondary btn-kecil" type="button" data-dialog="dlg-nonaktif" data-aksi="/pemilik/kos/penghuni/<%= p.id %>/nonaktifkan" data-ringkas="<%= ringkas %>">Nonaktifkan</button>
+              <% } else { %>
+              <button class="btn-secondary btn-kecil" type="button" data-dialog="dlg-aktif" data-aksi="/pemilik/kos/penghuni/<%= p.id %>/aktifkan" data-ringkas="<%= ringkas %>">Aktifkan Kembali</button>
+              <% } %>
+              <button class="btn-secondary btn-kecil btn-bahaya" type="button" data-dialog="dlg-hapus" data-aksi="/pemilik/kos/penghuni/<%= p.id %>/hapus" data-ringkas="<%= ringkas %>">Hapus</button>
             </div>
-            <% } else { %><button class="btn-secondary btn-kecil" type="button" data-dialog="dlg-aktif" data-aksi="/pemilik/kos/penghuni/<%= p.id %>/aktifkan" data-ringkas="<%= p.nama !== '-' ? p.nama : p.email %>">Aktifkan Kembali</button><% } %>
           </td>
         </tr>
         <% }) %>
@@ -56,7 +64,7 @@
   <div class="row"><h2 id="jdl-pindah">Ubah Penempatan</h2><button type="button" class="btn-ikon" data-tutup aria-label="Tutup">&times;</button></div>
   <p><strong data-ringkas></strong></p>
   <form method="post" action="#" class="auth-form">
-  <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
     <div class="field">
       <label for="kamar_id">Kamar tujuan</label>
       <select class="input" id="kamar_id" name="kamar_id" required>
@@ -70,6 +78,17 @@
       <button type="button" class="btn-secondary" data-tutup>Batal</button>
       <button type="submit" class="btn-primary" <%= kosong.length ? '' : 'disabled' %>>Pindahkan</button>
     </div>
+  </form>
+</dialog>
+
+<dialog class="modal" id="dlg-nonaktif" aria-labelledby="jdl-nonaktif">
+  <div class="row"><h2 id="jdl-nonaktif">Nonaktifkan akun ini?</h2><button type="button" class="btn-ikon" data-tutup aria-label="Tutup">&times;</button></div>
+  <p><strong data-ringkas></strong></p>
+  <div class="notice-box"><%- include('../../partials/icon', { nama: 'alert' }) %><div><p class="text-secondary">Penghuni tidak dapat masuk dan tidak menerima tagihan baru. Tagihan yang belum lunas tetap tercatat.</p></div></div>
+  <form method="post" action="#" class="aksi-baris">
+    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+    <button type="button" class="btn-secondary" data-tutup>Batal</button>
+    <button type="submit" class="btn-primary">Ya, Nonaktifkan</button>
   </form>
 </dialog>
 
@@ -93,13 +112,20 @@
     </div>
   </form>
 </dialog>
-<dialog class="modal" id="dlg-nonaktif" aria-labelledby="jdl-nonaktif">
-  <div class="row"><h2 id="jdl-nonaktif">Nonaktifkan akun ini?</h2><button type="button" class="btn-ikon" data-tutup aria-label="Tutup">&times;</button></div>
+
+<dialog class="modal" id="dlg-hapus" aria-labelledby="jdl-hapus">
+  <div class="row"><h2 id="jdl-hapus">Hapus penghuni ini?</h2><button type="button" class="btn-ikon" data-tutup aria-label="Tutup">&times;</button></div>
   <p><strong data-ringkas></strong></p>
-  <div class="notice-box"><%- include('../../partials/icon', { nama: 'alert' }) %><div><p class="text-secondary">Penghuni tidak dapat masuk dan tidak menerima tagihan baru. Tagihan yang belum lunas tetap tercatat.</p></div></div>
-  <form method="post" action="#" class="aksi-baris">
-  <input type="hidden" name="_csrf" value="<%= csrfToken %>">
-    <button type="button" class="btn-secondary" data-tutup>Batal</button>
-    <button type="submit" class="btn-primary">Ya, Nonaktifkan</button>
+  <div class="notice-box notice-bahaya"><%- include('../../partials/icon', { nama: 'alert' }) %><div><strong>Tidak dapat dibatalkan.</strong><p class="text-secondary">Akun, tagihan, dan bukti yang belum diterima dihapus permanen. Penghuni yang pembayarannya sudah tercatat di kas tidak bisa dihapus; gunakan Nonaktifkan.</p></div></div>
+  <form method="post" action="#" class="auth-form">
+    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+    <div class="field">
+      <label for="konfirmasi-hapus">Ketik <strong>HAPUS</strong> untuk melanjutkan</label>
+      <input class="input" id="konfirmasi-hapus" type="text" name="konfirmasi" autocomplete="off" pattern="HAPUS" required>
+    </div>
+    <div class="aksi-baris">
+      <button type="button" class="btn-secondary" data-tutup>Batal</button>
+      <button type="submit" class="btn-primary btn-bahaya-isi">Ya, Hapus Permanen</button>
+    </div>
   </form>
 </dialog>

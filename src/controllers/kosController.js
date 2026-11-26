@@ -32,7 +32,7 @@ async function penghuni(req, res) {
   const kosong = await kos.kamarKosong();
   res.render('pages/pengelola/kos-penghuni', {
     title: 'Kos', daftar, kosong, status,
-    info: infoValid(req.query.info, ['dipindah', 'dinonaktifkan', 'diaktifkan', 'gagal'])
+    info: infoValid(req.query.info, ['dipindah', 'dinonaktifkan', 'diaktifkan', 'dihapus', 'ada_pembayaran', 'gagal'])
   });
 }
 
@@ -56,12 +56,26 @@ async function aktifkanPenghuni(req, res) {
   res.redirect(`/pemilik/kos/penghuni?info=${r.ok ? 'diaktifkan' : 'gagal'}`);
 }
 
+async function hapusPenghuni(req, res) {
+  const dasar = '/pemilik/kos/penghuni';
+  const yakin = String((req.body && req.body.konfirmasi) || '').trim() === 'HAPUS';
+  if (!UUID.test(req.params.id) || !yakin) return res.redirect(`${dasar}?info=gagal`);
+  const r = await kos.hapusPenghuni(req.params.id);
+  res.redirect(`${dasar}?info=${r.ok ? 'dihapus' : (r.alasan === 'ada_pembayaran' ? 'ada_pembayaran' : 'gagal')}`);
+}
+
+async function hapusKamar(req, res) {
+  const dasar = '/pemilik/kos/kamar';
+  if (!UUID.test(req.params.id)) return res.redirect(`${dasar}?info=gagal`);
+  const r = await kos.hapusKamar(req.params.id);
+  res.redirect(`${dasar}?info=${r.ok ? 'dihapus' : 'tidak_bisa_hapus'}`);
+}
 // ----- Kelola kamar -----
 async function kamar(req, res) {
   const d = await kos.daftarKamar();
   res.render('pages/pengelola/kos-kamar', {
     title: 'Kos', d,
-    info: infoValid(req.query.info, ['ditambah', 'diubah', 'dinonaktifkan', 'diaktifkan', 'duplikat', 'nama', 'gagal'])
+    info: infoValid(req.query.info, ['ditambah', 'diubah', 'dinonaktifkan', 'diaktifkan', 'dihapus', 'tidak_bisa_hapus', 'duplikat', 'nama', 'gagal'])
   });
 }
 
@@ -92,5 +106,5 @@ async function aktifkanKamar(req, res) {
 
 module.exports = {
   semuaTagihan, lihatBukti, penghuni, pindah, nonaktifkanPenghuni, aktifkanPenghuni,
-  kamar, tambahKamar, ubahKamar, nonaktifkanKamar, aktifkanKamar
+  kamar, tambahKamar, ubahKamar, nonaktifkanKamar, aktifkanKamar, hapusKamar, hapusPenghuni
 };

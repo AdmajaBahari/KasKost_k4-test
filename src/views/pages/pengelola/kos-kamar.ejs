@@ -16,8 +16,10 @@
 <% if (info === 'diubah') { %><p class="notice alert-lebar">Nama kamar diperbarui.</p><% } %>
 <% if (info === 'dinonaktifkan') { %><p class="notice alert-lebar">Kamar dinonaktifkan.</p><% } %>
 <% if (info === 'diaktifkan') { %><p class="notice alert-lebar">Kamar diaktifkan kembali.</p><% } %>
+<% if (info === 'dihapus') { %><p class="notice alert-lebar">Kamar dihapus.</p><% } %>
 <% if (info === 'duplikat') { %><div class="alert alert-lebar" role="alert"><%- include('../../partials/icon', { nama: 'alert' }) %><strong>Nama kamar sudah dipakai.</strong></div><% } %>
 <% if (info === 'nama') { %><div class="alert alert-lebar" role="alert"><%- include('../../partials/icon', { nama: 'alert' }) %><strong>Nama kamar 1 sampai 30 karakter (huruf, angka, spasi, titik, atau strip).</strong></div><% } %>
+<% if (info === 'tidak_bisa_hapus') { %><div class="alert alert-lebar" role="alert"><%- include('../../partials/icon', { nama: 'alert' }) %><strong>Kamar tidak dapat dihapus. Kosongkan kamar atau selesaikan pendaftar yang memilihnya dulu.</strong></div><% } %>
 <% if (info === 'gagal') { %><div class="alert alert-lebar" role="alert"><%- include('../../partials/icon', { nama: 'alert' }) %><strong>Gagal memproses. Hanya kamar kosong yang dapat dinonaktifkan.</strong></div><% } %>
 
 <section class="glass-container">
@@ -43,7 +45,12 @@
               <span class="text-secondary small">Kosongkan kamar dulu</span>
               <% } else { %>
               <form method="post" action="/pemilik/kos/kamar/<%= k.id %>/aktifkan">
-  <input type="hidden" name="_csrf" value="<%= csrfToken %>"><button class="btn-secondary btn-kecil" type="submit">Aktifkan</button></form>
+                <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                <button class="btn-secondary btn-kecil" type="submit">Aktifkan</button>
+              </form>
+              <% } %>
+              <% if (k.status !== 'terisi') { %>
+              <button class="btn-secondary btn-kecil btn-bahaya" type="button" data-dialog="dlg-hapus-kamar" data-aksi="/pemilik/kos/kamar/<%= k.id %>/hapus" data-ringkas="<%= k.nama %>">Hapus</button>
               <% } %>
             </div>
           </td>
@@ -58,7 +65,7 @@
 <dialog class="modal" id="dlg-tambah" aria-labelledby="jdl-tambah">
   <div class="row"><h2 id="jdl-tambah">Tambah Kamar</h2><button type="button" class="btn-ikon" data-tutup aria-label="Tutup">&times;</button></div>
   <form method="post" action="/pemilik/kos/kamar/tambah" class="auth-form">
-  <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
     <div class="field">
       <label for="nama-baru">Nama atau nomor kamar *</label>
       <input class="input" id="nama-baru" type="text" name="nama" maxlength="30" placeholder="Kamar 11" required>
@@ -74,7 +81,7 @@
 <dialog class="modal" id="dlg-ubah" aria-labelledby="jdl-ubah">
   <div class="row"><h2 id="jdl-ubah">Ubah Kamar</h2><button type="button" class="btn-ikon" data-tutup aria-label="Tutup">&times;</button></div>
   <form method="post" action="#" class="auth-form">
-  <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
     <div class="field">
       <label for="nama-ubah">Nama atau nomor kamar *</label>
       <input class="input" id="nama-ubah" type="text" name="nama" maxlength="30" data-isi required>
@@ -91,8 +98,19 @@
   <p><strong data-ringkas></strong></p>
   <div class="notice-box"><%- include('../../partials/icon', { nama: 'alert' }) %><div><p class="text-secondary">Kamar tidak muncul di pilihan registrasi dan tidak menerima penghuni baru. Dapat diaktifkan kembali.</p></div></div>
   <form method="post" action="#" class="aksi-baris">
-  <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
     <button type="button" class="btn-secondary" data-tutup>Batal</button>
     <button type="submit" class="btn-primary">Ya, Nonaktifkan</button>
+  </form>
+</dialog>
+
+<dialog class="modal" id="dlg-hapus-kamar" aria-labelledby="jdl-hapus-kamar">
+  <div class="row"><h2 id="jdl-hapus-kamar">Hapus kamar ini?</h2><button type="button" class="btn-ikon" data-tutup aria-label="Tutup">&times;</button></div>
+  <p><strong data-ringkas></strong></p>
+  <div class="notice-box notice-bahaya"><%- include('../../partials/icon', { nama: 'alert' }) %><div><strong>Tidak dapat dibatalkan.</strong><p class="text-secondary">Kamar dihapus permanen dari daftar. Hanya kamar kosong atau nonaktif yang bisa dihapus. Riwayat tagihan penghuni tidak terpengaruh.</p></div></div>
+  <form method="post" action="#" class="aksi-baris">
+    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+    <button type="button" class="btn-secondary" data-tutup>Batal</button>
+    <button type="submit" class="btn-primary btn-bahaya-isi">Ya, Hapus Kamar</button>
   </form>
 </dialog>

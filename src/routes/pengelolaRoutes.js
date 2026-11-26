@@ -34,10 +34,12 @@ router.get('/pemilik/kos/penghuni', pemilik, tangkap(k.penghuni));
 router.post('/pemilik/kos/penghuni/:id/pindah', pemilik, tangkap(k.pindah));
 router.post('/pemilik/kos/penghuni/:id/nonaktifkan', pemilik, tangkap(k.nonaktifkanPenghuni));
 router.post('/pemilik/kos/penghuni/:id/aktifkan', pemilik, tangkap(k.aktifkanPenghuni));
+router.post('/pemilik/kos/penghuni/:id/hapus', pemilik, tangkap(k.hapusPenghuni));
 router.get('/pemilik/kos/kamar', pemilik, tangkap(k.kamar));
 router.post('/pemilik/kos/kamar/tambah', pemilik, tangkap(k.tambahKamar));
 router.post('/pemilik/kos/kamar/:id/ubah', pemilik, tangkap(k.ubahKamar));
 router.post('/pemilik/kos/kamar/:id/nonaktifkan', pemilik, tangkap(k.nonaktifkanKamar));
 router.post('/pemilik/kos/kamar/:id/aktifkan', pemilik, tangkap(k.aktifkanKamar));
+router.post('/pemilik/kos/kamar/:id/hapus', pemilik, tangkap(k.hapusKamar));
 
 module.exports = router;

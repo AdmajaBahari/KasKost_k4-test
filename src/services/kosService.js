@@ -104,6 +104,65 @@ async function aktifkanPenghuni(penghuniId, kamarId) {
   return { ok: true };
 }
 
+// Hapus permanen penghuni. Ditolak jika ada pembayaran yang sudah masuk kas.
+async function hapusPenghuni(penghuniId) {
+  const { data: ph, error } = await supabase.from('penghuni')
+    .select('id, aktif, kamar_id, user_id, user:user_id(role)').eq('id', penghuniId).maybeSingle();
+  if (error) throw error;
+  const u = ph && (Array.isArray(ph.user) ? ph.user[0] : ph.user);
+  if (!ph || !u || u.role !== 'penghuni') return { ok: false, alasan: 'tidak_ada' };
+
+  const { data: tg, error: e1 } = await supabase.from('tagihan').select('id').eq('penghuni_id', ph.id);
+  if (e1) throw e1;
+  const ids = (tg || []).map((t) => t.id);
+
+  let berkas = [];
+  if (ids.length) {
+    const { data: bk, error: e2 } = await supabase.from('bukti_pembayaran').select('status, file_path').in('tagihan_id', ids);
+    if (e2) throw e2;
+    // pembayaran yang sudah masuk kas tidak boleh hilang
+    if ((bk || []).some((b) => b.status === 'disetujui')) return { ok: false, alasan: 'ada_pembayaran' };
+    berkas = [...new Set((bk || []).map((b) => b.file_path))];
+  }
+
+  // akun, penghuni, tagihan, bukti, dan notifikasi ikut terhapus (cascade)
+  const { error: e3 } = await supabase.from('users').delete().eq('id', ph.user_id);
+  if (e3) throw e3;
+
+  if (ph.aktif && ph.kamar_id) {
+    await supabase.from('kamar').update({ status: 'kosong' }).eq('id', ph.kamar_id).eq('status', 'terisi');
+  }
+
+  // hapus foto yang tidak lagi dipakai baris bukti lain (bukti ganda bisa berbagi berkas)
+  if (berkas.length) {
+    const { data: masih } = await supabase.from('bukti_pembayaran').select('file_path').in('file_path', berkas);
+    const dipakai = new Set((masih || []).map((b) => b.file_path));
+    const hapus = berkas.filter((x) => !dipakai.has(x));
+    if (hapus.length) await supabase.storage.from('bukti-pembayaran').remove(hapus).catch(() => {});
+  }
+  return { ok: true };
+}
+
+// Hapus kamar: hanya kamar Kosong/Nonaktif yang tidak dipilih pendaftar
+async function hapusKamar(id) {
+  const { data: k, error } = await supabase.from('kamar').select('id, status').eq('id', id).maybeSingle();
+  if (error) throw error;
+  if (!k || k.status === 'terisi') return { ok: false };
+
+  const { data: rujuk, error: e1 } = await supabase.from('penghuni')
+    .select('id, aktif, user:user_id(status_akun)').eq('kamar_id', id);
+  if (e1) throw e1;
+  const status = (p) => { const u = Array.isArray(p.user) ? p.user[0] : p.user; return u ? u.status_akun : null; };
+  if ((rujuk || []).some((p) => p.aktif || ['menunggu_email', 'menunggu_persetujuan'].includes(status(p)))) return { ok: false };
+
+  if ((rujuk || []).length) await supabase.from('penghuni').update({ kamar_id: null }).eq('kamar_id', id);
+  const { data: hapus, error: e2 } = await supabase.from('kamar').delete().eq('id', id).neq('status', 'terisi').select('id');
+  if (e2) {
+    if (e2.code === '23503') return { ok: false }; // baru saja dipilih pendaftar lain
+    throw e2;
+  }
+  return { ok: !!(hapus && hapus.length) };
+}
 // ----- Kamar -----
 async function daftarKamar() {
   const { data: kamar, error } = await supabase.from('kamar').select('id, nama, status');
@@ -170,5 +229,5 @@ async function aktifkanKamar(id) {
 
 module.exports = {
   daftarPenghuni, kamarKosong, pindahkan, nonaktifkanPenghuni, aktifkanPenghuni,
-  daftarKamar, tambahKamar, ubahKamar, nonaktifkanKamar, aktifkanKamar
+  daftarKamar, tambahKamar, ubahKamar, nonaktifkanKamar, aktifkanKamar, hapusKamar, hapusPenghuni
 };

@@ -1,33 +1,31 @@
-<%
-const sumber = peran === 'penghuni' ? 'tagihan Anda' : 'kos dan kas';
-%>
+<% const sumber = peran === 'penghuni' ? 'tagihan Anda' : 'kos dan kas'; %>
 <div class="asisten">
   <div class="asisten-judul">
     <h1>Asisten AI</h1>
     <p class="text-secondary small">Jawaban disusun dari data <%= sumber %>.</p>
   </div>
 
-  <section class="glass-container chat" id="chat" aria-live="polite" aria-label="Percakapan">
+  <section class="glass-container chat" id="percakapan" aria-live="polite" aria-label="Percakapan">
     <div class="pesan pesan-ai">
       <span class="avatar-ai"><%- include('../../partials/icon', { nama: 'sparkle' }) %></span>
       <div class="gelembung">Halo! Pilih salah satu pertanyaan di bawah. Jawaban disusun dari data <%= sumber %>.</div>
     </div>
   </section>
 
-  <div class="pilih">
-    <p class="label-teks">Pilih pertanyaan</p>
-    <div class="carousel">
-      <button type="button" class="btn-ikon" data-geser="-1" aria-label="Pertanyaan sebelumnya">&lsaquo;</button>
-      <div class="slides" id="slides">
-        <% daftar.forEach(function (q) { %>
-        <div class="slot"><button type="button" class="chip chip-tanya" data-pertanyaan="<%= q.id %>"><%= q.teks %></button></div>
-        <% }) %>
+  <div class="pilih-tanya">
+    <p class="label-teks" id="lbl-tanya">Pilih pertanyaan</p>
+    <div class="rel" id="rel" role="group" aria-labelledby="lbl-tanya">
+      <button type="button" class="btn-ikon rel-panah" data-arah="-1" aria-label="Pertanyaan sebelumnya">&lsaquo;</button>
+      <div class="rel-jendela">
+        <div class="rel-jalur" id="rel-jalur">
+          <% daftar.forEach(function (q) { %>
+          <button type="button" class="chip rel-item" data-pertanyaan="<%= q.id %>"><%= q.teks %></button>
+          <% }) %>
+        </div>
       </div>
-      <button type="button" class="btn-ikon" data-geser="1" aria-label="Pertanyaan berikutnya">&rsaquo;</button>
+      <button type="button" class="btn-ikon rel-panah" data-arah="1" aria-label="Pertanyaan berikutnya">&rsaquo;</button>
     </div>
-    <div class="titik" aria-hidden="true">
-      <% daftar.forEach(function () { %><span></span><% }) %>
-    </div>
+    <div class="rel-titik" id="rel-titik" role="group" aria-label="Posisi pertanyaan"></div>
   </div>
 
   <p class="text-secondary small tengah">Jawaban hanya memakai data Anda. Pilih dari daftar, tidak ada input teks bebas. Percakapan tidak disimpan.</p>
@@ -41,3 +39,4 @@ const sumber = peran === 'penghuni' ? 'tagihan Anda' : 'kos dan kas';
     <span id="tautan-tagihan" data-href="<%= tautan.href %>" data-label="<%= tautan.label %>"></span>
   </div>
 </div>
+<script src="/js/asisten.js" defer></script>
